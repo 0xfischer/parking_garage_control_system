@@ -1,0 +1,11 @@
+[wokwi]
+version = 1
+# Use the ELF produced by IDF build for GDB debugging
+elf = "build/parking_garage_control_system.elf"
+firmware = "build/flasher_args.json"
+gdbServerPort = 3333
+
+# Serial monitor configuration
+[[wokwi.serial]]
+port = 0
+baud = 115200

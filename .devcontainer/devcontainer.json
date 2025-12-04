@@ -1,0 +1,35 @@
+{
+  "name": "ESP-IDF",
+  "image": "espressif/idf:v5.1",
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "espressif.esp-idf-extension"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "idf.espIdfPath": "/opt/esp/idf",
+        "idf.toolsPath": "/opt/esp",
+        "idf.pythonBinPath": "/opt/esp/python_env/idf5.1_py3.8_env/bin/python",
+        "C_Cpp.default.compilerPath": "/opt/esp/tools/xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf/bin/xtensa-esp32-elf-g++",
+        "C_Cpp.default.cStandard": "c11",
+        "C_Cpp.default.cppStandard": "c++17",
+        "C_Cpp.default.includePath": [
+          "${workspaceFolder}/**",
+          "/opt/esp/idf/components/**"
+        ]
+      }
+    }
+  },
+  "runArgs": [
+    "--privileged",
+    "-v",
+    "/dev:/dev"
+  ],
+  "postCreateCommand": ". /opt/esp/idf/export.sh",
+  "remoteUser": "root"
+}

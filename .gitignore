@@ -1,0 +1,31 @@
+# Build output
+build/
+dist/
+
+# ESP-IDF configuration
+sdkconfig
+sdkconfig.old
+.config
+.config.old
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/settings.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# ESP-IDF dependencies
+dependencies.lock
+managed_components/
+
+# Test executables
+test/test_*
+!test/test_*.cpp
+!test/test_*.h
+
+# Misc
+*.log

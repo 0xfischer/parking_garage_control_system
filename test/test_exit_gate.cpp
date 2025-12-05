@@ -3,8 +3,7 @@
  * @brief Unit tests for Exit Gate Controller
  */
 
-#include "../test/mocks/MockGpioInput.h"
-#include "../test/mocks/MockGpioOutput.h"
+#include "../test/mocks/MockGate.h"
 #include "../test/mocks/MockEventBus.h"
 #include "../test/mocks/MockTicketService.h"
 #include "ExitGateController.h"
@@ -15,8 +14,7 @@ void test_exit_full_cycle() {
     printf("Test: Exit Full Cycle (Manual Validation)\n");
 
     MockEventBus eventBus;
-    MockGpioInput lightBarrier;
-    MockGpioOutput motor;
+    MockGate gate;
     MockTicketService tickets(5);
 
     // Pre-create one active PAID ticket (ID=1)
@@ -25,19 +23,19 @@ void test_exit_full_cycle() {
     tickets.payTicket(id);  // Pay the ticket!
 
     ExitGateController controller(
-        eventBus, lightBarrier, motor, tickets, 100, 50
+        eventBus, gate, tickets, 100, 50
     );
 
     // Initial state
     assert(controller.getState() == ExitGateState::Idle);
-    assert(motor.getLevel() == false);
+    assert(!gate.isOpen());
 
     // Manually validate ticket
     bool validated = controller.validateTicketManually(id);
     assert(validated);
     eventBus.processAllPending();
     assert(controller.getState() == ExitGateState::OpeningBarrier);
-    assert(motor.getLevel() == true);
+    assert(gate.isOpen());
 
     // Barrier finished opening
     controller.TEST_forceBarrierTimeout();
@@ -55,7 +53,7 @@ void test_exit_full_cycle() {
     // Wait 2 seconds before closing
     controller.TEST_forceBarrierTimeout();
     assert(controller.getState() == ExitGateState::ClosingBarrier);
-    assert(motor.getLevel() == false);
+    assert(!gate.isOpen());
 
     // Barrier finished closing
     controller.TEST_forceBarrierTimeout();
@@ -68,12 +66,11 @@ void test_exit_no_tickets_rejected() {
     printf("Test: Exit No Tickets -> Rejected\n");
 
     MockEventBus eventBus;
-    MockGpioInput lightBarrier;
-    MockGpioOutput motor;
+    MockGate gate;
     MockTicketService tickets(5);
 
     ExitGateController controller(
-        eventBus, lightBarrier, motor, tickets, 100, 10
+        eventBus, gate, tickets, 100, 10
     );
 
     // Try to validate non-existent ticket
@@ -83,7 +80,7 @@ void test_exit_no_tickets_rejected() {
 
     // Should return to Idle (rejected)
     assert(controller.getState() == ExitGateState::Idle);
-    assert(motor.getLevel() == false);
+    assert(!gate.isOpen());
 
     printf("  ✓ Rejection without active tickets\n\n");
 }
@@ -92,8 +89,7 @@ void test_exit_unpaid_ticket_rejected() {
     printf("Test: Exit rejects unpaid ticket\n");
 
     MockEventBus eventBus;
-    MockGpioInput lightBarrier;
-    MockGpioOutput motor;
+    MockGate gate;
     MockTicketService tickets(5);
 
     // Prepare one active ticket (UNPAID)
@@ -103,7 +99,7 @@ void test_exit_unpaid_ticket_rejected() {
     assert(found && !ticket.isPaid);  // Verify unpaid
 
     ExitGateController controller(
-        eventBus, lightBarrier, motor, tickets, 100, 50
+        eventBus, gate, tickets, 100, 50
     );
 
     // Try to validate unpaid ticket
@@ -113,7 +109,7 @@ void test_exit_unpaid_ticket_rejected() {
 
     // Should return to Idle
     assert(controller.getState() == ExitGateState::Idle);
-    assert(motor.getLevel() == false);
+    assert(!gate.isOpen());
 
     // Ensure no ExitBarrierOpened event
     bool openedEvent = false;
@@ -129,8 +125,7 @@ void test_exit_light_barrier_in_idle_ignored() {
     printf("Test: Light barrier in Idle state is ignored\n");
 
     MockEventBus eventBus;
-    MockGpioInput lightBarrier;
-    MockGpioOutput motor;
+    MockGate gate;
     MockTicketService tickets(5);
 
     // Create a paid ticket
@@ -138,7 +133,7 @@ void test_exit_light_barrier_in_idle_ignored() {
     tickets.payTicket(id);
 
     ExitGateController controller(
-        eventBus, lightBarrier, motor, tickets, 100, 10
+        eventBus, gate, tickets, 100, 10
     );
 
     // Initial state
@@ -150,7 +145,7 @@ void test_exit_light_barrier_in_idle_ignored() {
 
     // Should still be in Idle
     assert(controller.getState() == ExitGateState::Idle);
-    assert(motor.getLevel() == false);
+    assert(!gate.isOpen());
 
     printf("  ✓ Light barrier ignored in Idle state\n\n");
 }

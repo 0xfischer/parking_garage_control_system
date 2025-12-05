@@ -3,6 +3,7 @@
 #include <cstdint>
 
 typedef int BaseType_t;
+typedef uint32_t UBaseType_t;
 typedef uint32_t TickType_t;
 
 #ifndef pdTRUE
@@ -22,4 +23,8 @@ typedef uint32_t TickType_t;
 
 #ifndef pdMS_TO_TICKS
 #define pdMS_TO_TICKS(ms) (static_cast<TickType_t>(ms))
+#endif
+
+#ifndef portYIELD_FROM_ISR
+#define portYIELD_FROM_ISR(x) (void)(x)
 #endif

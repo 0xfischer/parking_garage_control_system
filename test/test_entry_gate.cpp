@@ -7,7 +7,7 @@
  */
 
 #include "../test/mocks/MockGpioInput.h"
-#include "../test/mocks/MockGpioOutput.h"
+#include "../test/mocks/MockGate.h"
 #include "../test/mocks/MockEventBus.h"
 #include "../test/mocks/MockTicketService.h"
 #include "EntryGateController.h"
@@ -30,17 +30,17 @@ void test_entry_full_cycle() {
 
     // Setup
     MockEventBus eventBus;
-    MockGpioInput button, lightBarrier;
-    MockGpioOutput motor;
+    MockGpioInput button;
+    MockGate gate;
     MockTicketService tickets(5);  // Capacity: 5
 
     EntryGateController controller(
-        eventBus, button, lightBarrier, motor, tickets, 100
+        eventBus, button, gate, tickets, 100
     );
 
     // Initial state
     assert(controller.getState() == EntryGateState::Idle);
-    assert(motor.getLevel() == false);  // Motor off
+    assert(!gate.isOpen());  // Gate closed
 
     // Step 1: Button press -> publish event directly to bus
     eventBus.publish(Event(EventType::EntryButtonPressed));
@@ -48,7 +48,7 @@ void test_entry_full_cycle() {
 
     // Should transition through states and end up opening barrier
     assert(controller.getState() == EntryGateState::OpeningBarrier);
-    assert(motor.getLevel() == true);  // Motor on = opening
+    assert(gate.isOpen());  // Gate opening
 
     // Step 2: Simulate barrier opened (timeout)
     controller.TEST_forceBarrierTimeout();
@@ -67,7 +67,7 @@ void test_entry_full_cycle() {
     // Step 5: Simulate 2-second wait timeout
     controller.TEST_forceBarrierTimeout();
     assert(controller.getState() == EntryGateState::ClosingBarrier);
-    assert(motor.getLevel() == false); // closing -> motor LOW
+    assert(!gate.isOpen()); // Gate closing
 
     // Step 6: Simulate barrier closed (timeout)
     controller.TEST_forceBarrierTimeout();
@@ -93,8 +93,8 @@ void test_entry_parking_full() {
 
     // Setup
     MockEventBus eventBus;
-    MockGpioInput button, lightBarrier;
-    MockGpioOutput motor;
+    MockGpioInput button;
+    MockGate gate;
     MockTicketService tickets(2);  // Capacity: 2
 
     // Fill parking
@@ -103,7 +103,7 @@ void test_entry_parking_full() {
     assert(tickets.getActiveTicketCount() == 2);
 
     EntryGateController controller(
-        eventBus, button, lightBarrier, motor, tickets, 100
+        eventBus, button, gate, tickets, 100
     );
 
     // Initial state
@@ -114,11 +114,11 @@ void test_entry_parking_full() {
         eventBus.processAllPending();
         // Ensure that the state remains Idle
         assert(controller.getState() == EntryGateState::Idle);
-        assert(motor.getLevel() == false);  // Motor still off
+        assert(!gate.isOpen());  // Gate still closed
 
     // Should remain idle
     assert(controller.getState() == EntryGateState::Idle);
-    assert(motor.getLevel() == false);  // Motor still off
+    assert(!gate.isOpen());  // Gate still closed
 
     printf("  ✓ Parking full detected\n");
     printf("  ✓ Entry denied\n");
@@ -132,12 +132,12 @@ void test_entry_car_passing() {
     printf("Test: Entry Car Passing\n");
 
     MockEventBus eventBus;
-    MockGpioInput button, lightBarrier;
-    MockGpioOutput motor;
+    MockGpioInput button;
+    MockGate gate;
     MockTicketService tickets(5);
 
     EntryGateController controller(
-        eventBus, button, lightBarrier, motor, tickets, 100
+        eventBus, button, gate, tickets, 100
     );
 
     // Simulate reaching WaitingForCar state via button press and barrier timeout
@@ -158,12 +158,12 @@ void test_entry_ignore_repeated_press() {
     printf("Test: Entry ignores repeated button press\n");
 
     MockEventBus eventBus;
-    MockGpioInput button, lightBarrier;
-    MockGpioOutput motor;
+    MockGpioInput button;
+    MockGate gate;
     MockTicketService tickets(5);
 
     EntryGateController controller(
-        eventBus, button, lightBarrier, motor, tickets, 100
+        eventBus, button, gate, tickets, 100
     );
 
     // First press -> starts entry flow

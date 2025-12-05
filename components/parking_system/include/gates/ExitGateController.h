@@ -1,11 +1,16 @@
 #pragma once
 
 #include "IEventBus.h"
-#include "IGpioInput.h"
-#include "IGpioOutput.h"
+#include "IGate.h"
 #include "ITicketService.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
+#include "driver/gpio.h"
+#include "driver/ledc.h"
+#include <memory>
+
+// Forward declaration
+class Gate;
 
 /**
  * @brief Exit gate state machine states
@@ -21,36 +26,65 @@ enum class ExitGateState {
 };
 
 /**
+ * @brief Configuration for ExitGateController in production mode
+ */
+struct ExitGateConfig {
+    gpio_num_t lightBarrierPin;
+    gpio_num_t motorPin;
+    ledc_channel_t ledcChannel;
+    uint32_t barrierTimeoutMs;
+    uint32_t validationTimeMs;
+};
+
+/**
  * @brief Exit gate controller with state machine
  *
  * Handles exit sequence:
- * 1. Car arrives (light barrier blocked)
+ * 1. Car arrives (detected via IGate)
  * 2. Validate ticket (simulated - assumes paid)
- * 3. Open barrier
+ * 3. Open barrier via IGate interface
  * 4. Wait for car to pass through
- * 5. Close barrier
+ * 5. Close barrier via IGate interface
  */
 class ExitGateController {
 public:
     /**
-     * @brief Construct exit gate controller
+     * @brief Construct exit gate controller (production mode)
+     * Creates own Gate hardware internally
      * @param eventBus Event bus for publishing/subscribing
-     * @param lightBarrier Exit light barrier input
-     * @param motor Barrier motor output
+     * @param ticketService Ticket service
+     * @param config Configuration with GPIO pins and timings
+     */
+    ExitGateController(
+        IEventBus& eventBus,
+        ITicketService& ticketService,
+        const ExitGateConfig& config
+    );
+
+    /**
+     * @brief Construct exit gate controller (test mode)
+     * Uses injected dependencies for testing
+     * @param eventBus Event bus for publishing/subscribing
+     * @param gate Gate abstraction (barrier + light barrier)
      * @param ticketService Ticket service
      * @param barrierTimeoutMs Barrier open/close timeout in ms
      * @param validationTimeMs Ticket validation simulation time in ms
      */
     ExitGateController(
         IEventBus& eventBus,
-        IGpioInput& lightBarrier,
-        IGpioOutput& motor,
+        IGate& gate,
         ITicketService& ticketService,
         uint32_t barrierTimeoutMs = 2000,
         uint32_t validationTimeMs = 500
     );
 
     ~ExitGateController();
+
+    /**
+     * @brief Setup GPIO interrupts (only for production mode)
+     * Must be called after construction in production mode
+     */
+    void setupGpioInterrupts();
 
     // Prevent copying
     ExitGateController(const ExitGateController&) = delete;
@@ -95,9 +129,10 @@ private:
     static void validationTimerCallback(TimerHandle_t xTimer);
 
     IEventBus& m_eventBus;
-    IGpioInput& m_lightBarrier;
-    IGpioOutput& m_motor;
+    IGate* m_gate;  // Pointer for optional ownership
     ITicketService& m_ticketService;
+
+    std::unique_ptr<Gate> m_ownedGate;  // Only for production constructor
 
     ExitGateState m_state;
     uint32_t m_barrierTimeoutMs;

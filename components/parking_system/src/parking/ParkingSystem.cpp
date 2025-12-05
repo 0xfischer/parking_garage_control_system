@@ -18,33 +18,33 @@ ParkingSystem::ParkingSystem(const Config& config)
     // Create event bus
     m_eventBus = std::make_unique<FreeRtosEventBus>(32);
 
-    // Create GPIO objects
-    m_entryButton = std::make_unique<EspGpioInput>(config.entryButtonPin, config.buttonDebounceMs);
-    m_entryLightBarrier = std::make_unique<EspGpioInput>(config.entryLightBarrierPin, 0);
-    m_entryMotor = std::make_unique<EspServoOutput>(config.entryMotorPin, LEDC_CHANNEL_0, false);
-    m_exitLightBarrier = std::make_unique<EspGpioInput>(config.exitLightBarrierPin, 0);
-    m_exitMotor = std::make_unique<EspServoOutput>(config.exitMotorPin, LEDC_CHANNEL_1, false);
-
     // Create ticket service
     m_ticketService = std::make_unique<TicketService>(config.capacity);
 
-    // Create gate controllers
+    // Create gate controllers (they manage their own Gate hardware)
     m_entryGate = std::make_unique<EntryGateController>(
         *m_eventBus,
-        *m_entryButton,
-        *m_entryLightBarrier,
-        *m_entryMotor,
         *m_ticketService,
-        config.barrierTimeoutMs
+        EntryGateConfig{
+            .buttonPin = config.entryButtonPin,
+            .buttonDebounceMs = config.buttonDebounceMs,
+            .lightBarrierPin = config.entryLightBarrierPin,
+            .motorPin = config.entryMotorPin,
+            .ledcChannel = LEDC_CHANNEL_0,
+            .barrierTimeoutMs = config.barrierTimeoutMs
+        }
     );
 
     m_exitGate = std::make_unique<ExitGateController>(
         *m_eventBus,
-        *m_exitLightBarrier,
-        *m_exitMotor,
         *m_ticketService,
-        config.barrierTimeoutMs,
-        500  // Validation timeout
+        ExitGateConfig{
+            .lightBarrierPin = config.exitLightBarrierPin,
+            .motorPin = config.exitMotorPin,
+            .ledcChannel = LEDC_CHANNEL_1,
+            .barrierTimeoutMs = config.barrierTimeoutMs,
+            .validationTimeMs = 500
+        }
     );
 
     ESP_LOGI(TAG, "ParkingSystem created successfully");
@@ -52,39 +52,12 @@ ParkingSystem::ParkingSystem(const Config& config)
 
 void ParkingSystem::initialize() {
     ESP_LOGI(TAG, "Initializing ParkingSystem...");
-    setupGpioInterrupts();
+
+    // Setup GPIO interrupts in the controllers
+    m_entryGate->setupGpioInterrupts();
+    m_exitGate->setupGpioInterrupts();
+
     ESP_LOGI(TAG, "ParkingSystem initialized and ready");
-}
-
-void ParkingSystem::setupGpioInterrupts() {
-    // Setup entry button interrupt
-    m_entryButton->setInterruptHandler([this](bool level) {
-        // Button pressed when level goes LOW (pull-up resistor)
-        EventType eventType = level ? EventType::EntryButtonReleased : EventType::EntryButtonPressed;
-        Event event(eventType);
-        m_eventBus->publishFromISR(event);
-    });
-    m_entryButton->enableInterrupt();
-
-    // Setup entry light barrier interrupt
-    m_entryLightBarrier->setInterruptHandler([this](bool level) {
-        // Barrier blocked when level goes LOW
-        EventType eventType = level ? EventType::EntryLightBarrierCleared : EventType::EntryLightBarrierBlocked;
-        Event event(eventType);
-        m_eventBus->publishFromISR(event);
-    });
-    m_entryLightBarrier->enableInterrupt();
-
-    // Setup exit light barrier interrupt
-    m_exitLightBarrier->setInterruptHandler([this](bool level) {
-        // Barrier blocked when level goes LOW
-        EventType eventType = level ? EventType::ExitLightBarrierCleared : EventType::ExitLightBarrierBlocked;
-        Event event(eventType);
-        m_eventBus->publishFromISR(event);
-    });
-    m_exitLightBarrier->enableInterrupt();
-
-    ESP_LOGI(TAG, "GPIO interrupts configured");
 }
 
 void ParkingSystem::getStatus(char* buffer, size_t bufferSize) const {
@@ -99,19 +72,9 @@ void ParkingSystem::getStatus(char* buffer, size_t bufferSize) const {
         "=== Parking System Status ===\n"
         "Capacity: %lu/%lu (%lu free)\n"
         "Entry Gate: %s\n"
-        "Exit Gate: %s\n"
-        "Entry Button: %s\n"
-        "Entry Light Barrier: %s\n"
-        "Exit Light Barrier: %s\n"
-        "Entry Motor: %s\n"
-        "Exit Motor: %s\n",
+        "Exit Gate: %s\n",
         active, capacity, capacity - active,
         m_entryGate->getStateString(),
-        m_exitGate->getStateString(),
-        m_entryButton->getLevel() ? "RELEASED" : "PRESSED",
-        m_entryLightBarrier->getLevel() ? "CLEAR" : "BLOCKED",
-        m_exitLightBarrier->getLevel() ? "CLEAR" : "BLOCKED",
-        m_entryMotor->getLevel() ? "OPEN" : "CLOSED",
-        m_exitMotor->getLevel() ? "OPEN" : "CLOSED"
+        m_exitGate->getStateString()
     );
 }

@@ -4,10 +4,6 @@
 #include "ExitGateController.h"
 #include "FreeRtosEventBus.h"
 #include "TicketService.h"
-#include "EspGpioInput.h"
-#include "EspGpioOutput.h"
-#include "EspServoOutput.h"
-#include "IGpioOutput.h"
 #include <memory>
 
 /**
@@ -81,22 +77,13 @@ public:
     void getStatus(char* buffer, size_t bufferSize) const;
 
 private:
-    void setupGpioInterrupts();
-
     // Event bus (must be first - other components depend on it)
     std::unique_ptr<FreeRtosEventBus> m_eventBus;
-
-    // Hardware abstraction layer
-    std::unique_ptr<EspGpioInput> m_entryButton;
-    std::unique_ptr<EspGpioInput> m_entryLightBarrier;
-    std::unique_ptr<IGpioOutput> m_entryMotor;
-    std::unique_ptr<EspGpioInput> m_exitLightBarrier;
-    std::unique_ptr<IGpioOutput> m_exitMotor;
 
     // Services
     std::unique_ptr<TicketService> m_ticketService;
 
-    // Controllers
+    // Controllers (own their own Gate hardware)
     std::unique_ptr<EntryGateController> m_entryGate;
     std::unique_ptr<ExitGateController> m_exitGate;
 

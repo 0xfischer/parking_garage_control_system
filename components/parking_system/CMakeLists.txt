@@ -12,6 +12,7 @@ idf_component_register(
         "src/tickets/TicketService.cpp"
 
         # Gate controllers sources
+        "src/gates/Gate.cpp"
         "src/gates/EntryGateController.cpp"
         "src/gates/ExitGateController.cpp"
 

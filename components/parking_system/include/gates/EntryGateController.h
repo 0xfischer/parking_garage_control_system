@@ -2,10 +2,14 @@
 
 #include "IEventBus.h"
 #include "IGpioInput.h"
-#include "IGpioOutput.h"
+#include "IGate.h"
 #include "ITicketService.h"
+#include "Gate.h"
+#include "driver/gpio.h"
+#include "driver/ledc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
+#include <memory>
 
 /**
  * @brief Entry gate state machine states
@@ -22,31 +26,55 @@ enum class EntryGateState {
 };
 
 /**
+ * @brief Entry gate controller configuration
+ */
+struct EntryGateConfig {
+    gpio_num_t buttonPin;
+    uint32_t buttonDebounceMs;
+    gpio_num_t lightBarrierPin;
+    gpio_num_t motorPin;
+    ledc_channel_t ledcChannel;
+    uint32_t barrierTimeoutMs;
+};
+
+/**
  * @brief Entry gate controller with state machine
  *
  * Handles entry sequence:
  * 1. Button press triggers capacity check
  * 2. Issue ticket if capacity available
- * 3. Open barrier
+ * 3. Open barrier via IGate interface
  * 4. Wait for car to pass through
- * 5. Close barrier
+ * 5. Close barrier via IGate interface
+ *
+ * Manages its own Gate hardware internally.
  */
 class EntryGateController {
 public:
     /**
-     * @brief Construct entry gate controller
+     * @brief Construct entry gate controller with config (production)
+     * @param eventBus Event bus for publishing/subscribing
+     * @param ticketService Ticket service
+     * @param config Gate hardware configuration
+     */
+    EntryGateController(
+        IEventBus& eventBus,
+        ITicketService& ticketService,
+        const EntryGateConfig& config
+    );
+
+    /**
+     * @brief Construct entry gate controller with injected dependencies (testing)
      * @param eventBus Event bus for publishing/subscribing
      * @param button Entry button input
-     * @param lightBarrier Entry light barrier input
-     * @param motor Barrier motor output
+     * @param gate Gate abstraction (barrier + light barrier)
      * @param ticketService Ticket service
      * @param barrierTimeoutMs Barrier open/close timeout in ms
      */
     EntryGateController(
         IEventBus& eventBus,
         IGpioInput& button,
-        IGpioInput& lightBarrier,
-        IGpioOutput& motor,
+        IGate& gate,
         ITicketService& ticketService,
         uint32_t barrierTimeoutMs = 2000
     );
@@ -67,6 +95,11 @@ public:
      */
     [[nodiscard]] const char* getStateString() const;
 
+    /**
+     * @brief Setup GPIO interrupts (only for production constructor)
+     */
+    void setupGpioInterrupts();
+
 #ifdef UNIT_TEST
     // Test helpers to simulate timer expirations without FreeRTOS timers
     void TEST_forceBarrierTimeout() { onBarrierTimeout(); }
@@ -85,10 +118,12 @@ private:
     static void barrierTimerCallback(TimerHandle_t xTimer);
 
     IEventBus& m_eventBus;
-    IGpioInput& m_button;
-    IGpioInput& m_lightBarrier;
-    IGpioOutput& m_motor;
+    IGpioInput* m_button;  // Pointer for optional ownership
+    IGate* m_gate;         // Pointer for optional ownership
     ITicketService& m_ticketService;
+
+    // Optional owned hardware (only for production constructor)
+    std::unique_ptr<Gate> m_ownedGate;
 
     EntryGateState m_state;
     uint32_t m_barrierTimeoutMs;

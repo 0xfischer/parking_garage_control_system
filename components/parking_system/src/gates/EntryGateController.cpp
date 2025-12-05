@@ -2,34 +2,57 @@
 #include "esp_log.h"
 
 static const char* TAG = "EntryGateController";
+static const char *entryGateStateToString(EntryGateState state);
 
-// Helper function to convert state to string (avoids stack-heavy lambda)
-static const char* entryGateStateToString(EntryGateState state) {
-    switch (state) {
-        case EntryGateState::Idle: return "Idle";
-        case EntryGateState::CheckingCapacity: return "CheckingCapacity";
-        case EntryGateState::IssuingTicket: return "IssuingTicket";
-        case EntryGateState::OpeningBarrier: return "OpeningBarrier";
-        case EntryGateState::WaitingForCar: return "WaitingForCar";
-        case EntryGateState::CarPassing: return "CarPassing";
-        case EntryGateState::WaitingBeforeClose: return "WaitingBeforeClose";
-        case EntryGateState::ClosingBarrier: return "ClosingBarrier";
-        default: return "Unknown";
-    }
+// Production constructor - creates own Gate
+EntryGateController::EntryGateController(IEventBus &eventBus,
+                                         ITicketService &ticketService,
+                                         const EntryGateConfig &config)
+    : m_eventBus(eventBus), m_ticketService(ticketService), m_state(EntryGateState::Idle),
+      m_barrierTimeoutMs(config.barrierTimeoutMs), m_currentTicketId(0), m_barrierTimer(nullptr)
+{
+    // Create owned gate hardware
+    m_ownedGate = std::make_unique<Gate>(
+        config.buttonPin,
+        config.buttonDebounceMs,
+        config.lightBarrierPin,
+        config.motorPin,
+        config.ledcChannel
+    );
+    m_button = &m_ownedGate->getButton();
+    m_gate = m_ownedGate.get();
+
+    // Subscribe to events
+    m_eventBus.subscribe(EventType::EntryButtonPressed,
+        [this](const Event& e) { onButtonPressed(e); });
+    m_eventBus.subscribe(EventType::EntryLightBarrierBlocked,
+        [this](const Event& e) { onLightBarrierBlocked(e); });
+    m_eventBus.subscribe(EventType::EntryLightBarrierCleared,
+        [this](const Event& e) { onLightBarrierCleared(e); });
+
+    // Create barrier timer
+    m_barrierTimer = xTimerCreate(
+        "EntryBarrierTimer",
+        pdMS_TO_TICKS(m_barrierTimeoutMs),
+        pdFALSE,
+        this,
+        barrierTimerCallback
+    );
+
+    ESP_LOGI(TAG, "EntryGateController initialized (production mode)");
 }
 
+// Test constructor - uses injected dependencies
 EntryGateController::EntryGateController(
     IEventBus& eventBus,
     IGpioInput& button,
-    IGpioInput& lightBarrier,
-    IGpioOutput& motor,
+    IGate& gate,
     ITicketService& ticketService,
     uint32_t barrierTimeoutMs
 )
     : m_eventBus(eventBus)
-    , m_button(button)
-    , m_lightBarrier(lightBarrier)
-    , m_motor(motor)
+    , m_button(&button)
+    , m_gate(&gate)
     , m_ticketService(ticketService)
     , m_state(EntryGateState::Idle)
     , m_barrierTimeoutMs(barrierTimeoutMs)
@@ -48,18 +71,45 @@ EntryGateController::EntryGateController(
     m_barrierTimer = xTimerCreate(
         "EntryBarrierTimer",
         pdMS_TO_TICKS(m_barrierTimeoutMs),
-        pdFALSE,  // One-shot timer
+        pdFALSE,
         this,
         barrierTimerCallback
     );
 
-    ESP_LOGI(TAG, "EntryGateController initialized");
+    ESP_LOGI(TAG, "EntryGateController initialized (test mode)");
 }
 
 EntryGateController::~EntryGateController() {
     if (m_barrierTimer) {
         xTimerDelete(m_barrierTimer, 0);
     }
+}
+
+void EntryGateController::setupGpioInterrupts() {
+    // Only setup interrupts if we own the gate (production mode)
+    if (!m_ownedGate) {
+        return;
+    }
+
+    // Setup entry button interrupt
+    m_button->setInterruptHandler([this](bool level) {
+        // Button pressed when level goes LOW (pull-up resistor)
+        EventType eventType = level ? EventType::EntryButtonReleased : EventType::EntryButtonPressed;
+        Event event(eventType);
+        m_eventBus.publish(event);
+    });
+    m_button->enableInterrupt();
+
+    // Setup entry light barrier interrupt
+    m_ownedGate->getLightBarrier().setInterruptHandler([this](bool level) {
+        // Barrier blocked when level goes LOW
+        EventType eventType = level ? EventType::EntryLightBarrierCleared : EventType::EntryLightBarrierBlocked;
+        Event event(eventType);
+        m_eventBus.publish(event);
+    });
+    m_ownedGate->getLightBarrier().enableInterrupt();
+
+    ESP_LOGI(TAG, "Entry gate GPIO interrupts configured");
 }
 
 const char* EntryGateController::getStateString() const {
@@ -119,7 +169,7 @@ void EntryGateController::onButtonPressed(const Event& event) {
 
     // Open barrier
     setState(EntryGateState::OpeningBarrier);
-    m_motor.setLevel(true);  // Motor HIGH = opening
+    m_gate->open();
     m_eventBus.publish(Event(EventType::EntryBarrierOpened));
     startBarrierTimer();
 }
@@ -159,7 +209,7 @@ void EntryGateController::onBarrierTimeout() {
         // Wait period finished, now close barrier
         ESP_LOGI(TAG, "Wait period finished, closing barrier");
         setState(EntryGateState::ClosingBarrier);
-        m_motor.setLevel(false);  // Motor LOW = closing
+        m_gate->close();
         m_eventBus.publish(Event(EventType::EntryBarrierClosed));
 
         // Start timer with normal barrier timeout
@@ -190,5 +240,31 @@ void EntryGateController::barrierTimerCallback(TimerHandle_t xTimer) {
     auto* controller = static_cast<EntryGateController*>(pvTimerGetTimerID(xTimer));
     if (controller) {
         controller->onBarrierTimeout();
+    }
+}
+
+// Helper function to convert state to string (avoids stack-heavy lambda)
+static const char *entryGateStateToString(EntryGateState state)
+{
+    switch (state)
+    {
+    case EntryGateState::Idle:
+        return "Idle";
+    case EntryGateState::CheckingCapacity:
+        return "CheckingCapacity";
+    case EntryGateState::IssuingTicket:
+        return "IssuingTicket";
+    case EntryGateState::OpeningBarrier:
+        return "OpeningBarrier";
+    case EntryGateState::WaitingForCar:
+        return "WaitingForCar";
+    case EntryGateState::CarPassing:
+        return "CarPassing";
+    case EntryGateState::WaitingBeforeClose:
+        return "WaitingBeforeClose";
+    case EntryGateState::ClosingBarrier:
+        return "ClosingBarrier";
+    default:
+        return "Unknown";
     }
 }

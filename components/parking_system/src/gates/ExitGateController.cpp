@@ -1,33 +1,60 @@
 #include "ExitGateController.h"
+#include "Gate.h"
 #include "esp_log.h"
 
 static const char* TAG = "ExitGateController";
+static const char *exitGateStateToString(ExitGateState state);
 
-// Helper function to convert state to string (avoids stack-heavy lambda)
-static const char* exitGateStateToString(ExitGateState state) {
-    switch (state) {
-        case ExitGateState::Idle: return "Idle";
-        case ExitGateState::ValidatingTicket: return "ValidatingTicket";
-        case ExitGateState::OpeningBarrier: return "OpeningBarrier";
-        case ExitGateState::WaitingForCarToPass: return "WaitingForCarToPass";
-        case ExitGateState::CarPassing: return "CarPassing";
-        case ExitGateState::WaitingBeforeClose: return "WaitingBeforeClose";
-        case ExitGateState::ClosingBarrier: return "ClosingBarrier";
-        default: return "Unknown";
-    }
+// Production constructor - creates own Gate
+ExitGateController::ExitGateController(IEventBus &eventBus, ITicketService &ticketService, const ExitGateConfig &config)
+    : m_eventBus(eventBus), m_ticketService(ticketService), m_state(ExitGateState::Idle),
+      m_barrierTimeoutMs(config.barrierTimeoutMs), m_validationTimeMs(config.validationTimeMs), m_currentTicketId(0),
+      m_barrierTimer(nullptr), m_validationTimer(nullptr)
+{
+    // Create owned gate hardware (no button for exit gate)
+    m_ownedGate = std::make_unique<Gate>(
+        config.lightBarrierPin,
+        config.motorPin,
+        config.ledcChannel
+    );
+    m_gate = m_ownedGate.get();
+
+    // Subscribe to events
+    m_eventBus.subscribe(EventType::ExitLightBarrierBlocked,
+        [this](const Event& e) { onLightBarrierBlocked(e); });
+    m_eventBus.subscribe(EventType::ExitLightBarrierCleared,
+        [this](const Event& e) { onLightBarrierCleared(e); });
+
+    // Create timers
+    m_barrierTimer = xTimerCreate(
+        "ExitBarrierTimer",
+        pdMS_TO_TICKS(m_barrierTimeoutMs),
+        pdFALSE,
+        this,
+        barrierTimerCallback
+    );
+
+    m_validationTimer = xTimerCreate(
+        "ExitValidationTimer",
+        pdMS_TO_TICKS(m_validationTimeMs),
+        pdFALSE,
+        this,
+        validationTimerCallback
+    );
+
+    ESP_LOGI(TAG, "ExitGateController initialized (production mode)");
 }
 
+// Test constructor - uses injected dependencies
 ExitGateController::ExitGateController(
     IEventBus& eventBus,
-    IGpioInput& lightBarrier,
-    IGpioOutput& motor,
+    IGate& gate,
     ITicketService& ticketService,
     uint32_t barrierTimeoutMs,
     uint32_t validationTimeMs
 )
     : m_eventBus(eventBus)
-    , m_lightBarrier(lightBarrier)
-    , m_motor(motor)
+    , m_gate(&gate)
     , m_ticketService(ticketService)
     , m_state(ExitGateState::Idle)
     , m_barrierTimeoutMs(barrierTimeoutMs)
@@ -59,7 +86,7 @@ ExitGateController::ExitGateController(
         validationTimerCallback
     );
 
-    ESP_LOGI(TAG, "ExitGateController initialized");
+    ESP_LOGI(TAG, "ExitGateController initialized (test mode)");
 }
 
 ExitGateController::~ExitGateController() {
@@ -69,6 +96,24 @@ ExitGateController::~ExitGateController() {
     if (m_validationTimer) {
         xTimerDelete(m_validationTimer, 0);
     }
+}
+
+void ExitGateController::setupGpioInterrupts() {
+    // Only setup interrupts if we own the gate (production mode)
+    if (!m_ownedGate) {
+        return;
+    }
+
+    // Setup exit light barrier interrupt
+    m_ownedGate->getLightBarrier().setInterruptHandler([this](bool level) {
+        // Barrier blocked when level goes LOW
+        EventType eventType = level ? EventType::ExitLightBarrierCleared : EventType::ExitLightBarrierBlocked;
+        Event event(eventType);
+        m_eventBus.publish(event);
+    });
+    m_ownedGate->getLightBarrier().enableInterrupt();
+
+    ESP_LOGI(TAG, "Exit gate GPIO interrupts configured");
 }
 
 const char* ExitGateController::getStateString() const {
@@ -150,7 +195,7 @@ bool ExitGateController::validateTicketManually(uint32_t ticketId) {
             m_eventBus.publish(Event(EventType::TicketValidated, 0, ticketId));
 
             setState(ExitGateState::OpeningBarrier);
-            m_motor.setLevel(true);
+            m_gate->open();
             m_eventBus.publish(Event(EventType::ExitBarrierOpened));
             startBarrierTimer();
             return true;
@@ -172,7 +217,7 @@ void ExitGateController::onBarrierTimeout() {
         // Wait period finished, now close barrier
         ESP_LOGI(TAG, "Wait period finished, closing barrier");
         setState(ExitGateState::ClosingBarrier);
-        m_motor.setLevel(false);  // Motor LOW = closing
+        m_gate->close();
         m_eventBus.publish(Event(EventType::ExitBarrierClosed));
 
         // Start timer with normal barrier timeout
@@ -221,5 +266,29 @@ void ExitGateController::validationTimerCallback(TimerHandle_t xTimer) {
     auto* controller = static_cast<ExitGateController*>(pvTimerGetTimerID(xTimer));
     if (controller) {
         controller->onValidationTimeout();
+    }
+}
+
+// Helper function to convert state to string (avoids stack-heavy lambda)
+static const char *exitGateStateToString(ExitGateState state)
+{
+    switch (state)
+    {
+    case ExitGateState::Idle:
+        return "Idle";
+    case ExitGateState::ValidatingTicket:
+        return "ValidatingTicket";
+    case ExitGateState::OpeningBarrier:
+        return "OpeningBarrier";
+    case ExitGateState::WaitingForCarToPass:
+        return "WaitingForCarToPass";
+    case ExitGateState::CarPassing:
+        return "CarPassing";
+    case ExitGateState::WaitingBeforeClose:
+        return "WaitingBeforeClose";
+    case ExitGateState::ClosingBarrier:
+        return "ClosingBarrier";
+    default:
+        return "Unknown";
     }
 }

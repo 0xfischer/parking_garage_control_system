@@ -32,30 +32,39 @@ The barrier gates are controlled by servo motors using PWM signals:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    Main Task                         │
-│              (Event Loop + Console)                  │
-└─────────────────┬───────────────────────────────────┘
-                  │
-         ┌────────▼────────┐
-         │   EventBus      │
-         │  (FreeRTOS      │
-         │    Queue)       │
-         └────┬────┬───────┘
-              │    │
-      ┌───────┘    └────────┐
-      │                     │
-┌─────▼──────┐       ┌──────▼──────┐
-│   Entry    │       │    Exit     │
-│   Gate     │       │    Gate     │
-│Controller  │       │ Controller  │
-└─────┬──────┘       └──────┬──────┘
-      │                     │
-      └──────────┬──────────┘
-                 │
-         ┌───────▼────────┐
-         │ Ticket Service │
-         └────────────────┘
+│                  ParkingSystem                       │
+│         (Main Orchestrator & Initialization)         │
+└────────────┬─────────────────┬─────────────┬────────┘
+             │                 │             │
+    ┌────────▼────────┐   ┌────▼─────┐  ┌───▼────────┐
+    │   EventBus      │   │ Ticket   │  │  Console   │
+    │  (FreeRTOS)     │   │ Service  │  │  Commands  │
+    └────┬────┬───────┘   └──────────┘  └────────────┘
+         │    │
+ ┌───────┘    └───────┐
+ │                    │
+┌▼──────────────┐  ┌──▼─────────────┐
+│ Entry Gate    │  │ Exit Gate      │
+│ Controller    │  │ Controller     │
+│ ┌───────────┐ │  │ ┌────────────┐ │
+│ │   Gate    │ │  │ │   Gate     │ │
+│ │ ┌───────┐ │ │  │ │ ┌────────┐ │ │
+│ │ │Button │ │ │  │ │ │ Light  │ │ │
+│ │ │Light  │ │ │  │ │ │Barrier │ │ │
+│ │ │Barrier│ │ │  │ │ │ Motor  │ │ │
+│ │ │Motor  │ │ │  │ │ └────────┘ │ │
+│ │ └───────┘ │ │  │ └────────────┘ │
+│ └───────────┘ │  └────────────────┘
+└───────────────┘
 ```
+
+**Key Design Principles:**
+
+- **Config-Based Construction**: Controllers accept config structs with all GPIO pins and settings
+- **Ownership Hierarchy**: Controllers own their Gate hardware (Button, LightBarrier, Motor)
+- **Clean Separation**: ParkingSystem doesn't manage low-level GPIO - only controllers and services
+- **Dual Constructors**: Production mode creates hardware, test mode accepts mocks
+- **Interrupt Setup**: Controllers configure their own GPIO interrupts via `setupGpioInterrupts()`
 
 ### State Machines
 
@@ -316,38 +325,102 @@ W (9999) EntryGateController: Parking full! (5/5)
 
 ### Unit Tests
 
+The project uses **dependency injection** with a **dual-constructor pattern** for testability:
+
+**Production Constructor** (creates own hardware):
+```cpp
+EntryGateController entryGate(
+    eventBus,
+    ticketService,
+    EntryGateConfig{
+        .buttonPin = GPIO_NUM_25,
+        .buttonDebounceMs = 50,
+        .lightBarrierPin = GPIO_NUM_15,
+        .motorPin = GPIO_NUM_22,
+        .ledcChannel = LEDC_CHANNEL_0,
+        .barrierTimeoutMs = 2000
+    }
+);
+```
+
+**Test Constructor** (accepts mocks):
+```cpp
+EntryGateController controller(
+    mockEventBus,
+    mockButton,
+    mockGate,
+    mockTicketService,
+    2000  // timeout
+);
+```
+
+### Mock Implementations
+
 Mock implementations are provided for testing:
+- `MockGate`: Simulate gate barrier operations
 - `MockGpioInput`: Simulate GPIO inputs and interrupts
-- `MockGpioOutput`: Verify GPIO output states
 - `MockEventBus`: Synchronous event processing
 - `MockTicketService`: Controllable ticket logic
 
-Example test structure:
+### Running Tests
+
+Build and run unit tests on your development machine (no ESP32 needed):
+
+```bash
+# Build entry gate tests
+g++ -std=c++20 -DUNIT_TEST \
+  -I components/parking_system/include \
+  -I components/parking_system/include/events \
+  -I components/parking_system/include/gates \
+  -I components/parking_system/include/hal \
+  -I components/parking_system/include/tickets \
+  -I test/stubs -I test/mocks \
+  -o test/bin_test_entry_gate \
+  test/test_entry_gate.cpp \
+  components/parking_system/src/gates/EntryGateController.cpp \
+  components/parking_system/src/tickets/TicketService.cpp \
+  components/parking_system/src/events/FreeRtosEventBus.cpp \
+  components/parking_system/src/gates/Gate.cpp
+
+# Run tests
+./test/bin_test_entry_gate
+./test/bin_test_exit_gate
+```
+
+**Test Results:**
+- ✅ **8/8 tests passing** (4 entry gate + 4 exit gate)
+- ✅ **< 1 second** execution time
+- ✅ **No hardware required**
+
+### Example Test Structure
 
 ```cpp
+#include "MockGate.h"
 #include "MockGpioInput.h"
-#include "MockGpioOutput.h"
 #include "MockEventBus.h"
 #include "MockTicketService.h"
 #include "EntryGateController.h"
 
 void test_entry_full_cycle() {
+    // Setup mocks
     MockEventBus eventBus;
-    MockGpioInput button, lightBarrier;
-    MockGpioOutput motor;
+    MockGpioInput button;
+    MockGate gate;
     MockTicketService tickets(5);
 
+    // Create controller with test constructor
     EntryGateController controller(
-        eventBus, button, lightBarrier, motor, tickets, 100
+        eventBus, button, gate, tickets, 100
     );
 
     // Simulate button press
-    button.simulateInterrupt(false);  // LOW = pressed
+    Event event(EventType::EntryButtonPressed);
+    eventBus.publish(event);
     eventBus.processAllPending();
 
-    // Verify state and motor
+    // Verify state and gate
     assert(controller.getState() == EntryGateState::OpeningBarrier);
-    assert(motor.getLevel() == true);  // Motor ON
+    assert(gate.isOpen() == true);
 }
 ```
 ## State Machine Examples
@@ -509,21 +582,56 @@ assert(motor.getCurrentSpeed() == 100);
 ```
 parking_garage_control_system/
 ├── components/
-│   ├── hal/              # Hardware Abstraction Layer
-│   │   ├── include/      # GPIO interfaces
-│   │   └── src/          # ESP32 implementations
-│   ├── events/           # Event system
-│   ├── tickets/          # Ticket service
-│   ├── gates/            # Gate controllers
-│   └── parking/          # Main system orchestrator
+│   └── parking_system/           # Main component
+│       ├── include/
+│       │   ├── events/           # Event system (IEventBus, FreeRtosEventBus)
+│       │   ├── gates/            # Gate controllers & abstractions
+│       │   │   ├── EntryGateController.h    # Entry gate FSM + config
+│       │   │   ├── ExitGateController.h     # Exit gate FSM + config
+│       │   │   ├── Gate.h                   # Owns Button/LightBarrier/Motor
+│       │   │   └── IGate.h                  # Gate interface
+│       │   ├── hal/              # Hardware Abstraction Layer
+│       │   │   ├── IGpioInput.h            # Input interface
+│       │   │   ├── IGpioOutput.h           # Output interface
+│       │   │   ├── EspGpioInput.h          # ESP32 GPIO input
+│       │   │   └── EspServoOutput.h        # ESP32 servo control
+│       │   ├── tickets/          # Ticket service
+│       │   └── parking/          # Main orchestrator
+│       │       └── ParkingSystem.h         # Creates controllers & services
+│       └── src/                  # Implementation files
 ├── test/
-│   └── mocks/            # Mock implementations
+│   ├── mocks/                    # Mock implementations
+│   │   ├── MockGate.h            # Gate mock
+│   │   ├── MockGpioInput.h       # GPIO input mock
+│   │   ├── MockEventBus.h        # Event bus mock
+│   │   └── MockTicketService.h   # Ticket service mock
+│   ├── stubs/                    # FreeRTOS/ESP-IDF stubs for PC builds
+│   │   ├── freertos/             # FreeRTOS headers
+│   │   └── driver/               # ESP driver headers
+│   ├── test_entry_gate.cpp       # Entry gate unit tests (4 tests)
+│   └── test_exit_gate.cpp        # Exit gate unit tests (4 tests)
 ├── main/
-│   ├── main.cpp          # Application entry point
-│   ├── console_commands.cpp
-│   └── Kconfig.projbuild # Configuration menu
+│   ├── main.cpp                  # Application entry point
+│   ├── console_commands.cpp      # Console command handlers
+│   └── Kconfig.projbuild         # Configuration menu
+├── examples/
+│   ├── hal_state_machine/        # Simple HAL pattern example
+│   └── event_driven_state_machine/  # Advanced event-driven pattern
 └── CMakeLists.txt
 ```
+
+### Key Files
+
+**Production Code:**
+- [ParkingSystem.cpp](components/parking_system/src/parking/ParkingSystem.cpp) - Main orchestrator, creates controllers with config structs
+- [EntryGateController.cpp](components/parking_system/src/gates/EntryGateController.cpp) - Entry gate FSM, owns Gate hardware
+- [ExitGateController.cpp](components/parking_system/src/gates/ExitGateController.cpp) - Exit gate FSM, owns Gate hardware
+- [Gate.cpp](components/parking_system/src/gates/Gate.cpp) - Gate abstraction (Button, LightBarrier, Motor)
+
+**Test Code:**
+- [test_entry_gate.cpp](test/test_entry_gate.cpp) - Entry gate tests using mocks
+- [test_exit_gate.cpp](test/test_exit_gate.cpp) - Exit gate tests using mocks
+- [MockGate.h](test/mocks/MockGate.h) - Gate mock for testing
 
 ## C++20 Features Used
 

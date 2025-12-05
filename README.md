@@ -350,6 +350,76 @@ void test_entry_full_cycle() {
     assert(motor.getLevel() == true);  // Motor ON
 }
 ```
+### Example Implementations for Event-Driven State Machines
+####  Implementation Using Methods for State Transitions
+
+```cpp
+#include <iostream>
+#include <string>
+
+class StateMachine {
+public:
+  enum class State {
+    Idle,
+    Processing,
+    Completed
+  };
+
+  StateMachine() : currentState(State::Idle) {}
+
+  void handleEvent(const std::string& event) {
+    switch (currentState) {
+      case State::Idle:
+        onIdle(event);
+        break;
+      case State::Processing:
+        onProcessing(event);
+        break;
+      case State::Completed:
+        onCompleted(event);
+        break;
+    }
+  }
+
+private:
+  State currentState;
+
+  void onIdle(const std::string& event) {
+    if (event == "start") {
+      std::cout << "Transitioning to Processing state\n";
+      currentState = State::Processing;
+    }
+  }
+
+  void onProcessing(const std::string& event) {
+    if (event == "complete") {
+      std::cout << "Transitioning to Completed state\n";
+      currentState = State::Completed;
+    }
+  }
+
+  void onCompleted(const std::string& event) {
+    if (event == "reset") {
+      std::cout << "Transitioning to Idle state\n";
+      currentState = State::Idle;
+    }
+  }
+};
+
+int main() {
+  StateMachine sm;
+  sm.handleEvent("start");
+  sm.handleEvent("complete");
+  sm.handleEvent("reset");
+  return 0;
+}
+```
+
+#### 3. Event-Driven Implementation with HAL Abstraction
+
+This example demonstrates how to decouple logic from hardware using interfaces (HAL). The State Machine receives events and controls hardware via the `IGpioOutput` interface.
+
+[View full example code](examples/hal_state_machine.cpp)
 
 ## Project Structure
 
@@ -386,5 +456,6 @@ parking_garage_control_system/
 MIT License
 
 ## Author
+Eugen Fischer
 
 Created with Claude Code

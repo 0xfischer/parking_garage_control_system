@@ -29,3 +29,4 @@ test/test_*
 
 # Misc
 *.log
+.claude/settings.local

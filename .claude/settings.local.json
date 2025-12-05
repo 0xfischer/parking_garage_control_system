@@ -17,7 +17,8 @@
       "Bash(./hal_example)",
       "Bash(./hal_test)",
       "Bash(./event_example)",
-      "Bash(./event_test)"
+      "Bash(./event_test)",
+      "Bash(. /home/efischer/esp@5.2/v5.2.2/esp-idf/export.sh 2)"
     ],
     "deny": [],
     "ask": []

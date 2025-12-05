@@ -34,7 +34,7 @@ The barrier gates are controlled by servo motors using PWM signals:
 
 ```mermaid
 graph TB
-    subgraph ParkingSystem["ParkingSystem<br/>(Main Orchestrator)"]
+    subgraph ParkingSystem["<b style='font-size:16px'>PARKINGSYSTEM</b>(Main Orchestrator)"<br/><br/>]
         EventBus["EventBus<br/>(FreeRTOS Queue)"]
         TicketService["TicketService<br/>(Capacity & Tickets)"]
     end
@@ -75,7 +75,7 @@ graph TB
     Console -.controls.-> EntryController
     Console -.controls.-> ExitController
 
-    classDef system fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef system fill:#e1f5ff,stroke:#01579b,stroke-width:3px
     classDef controller fill:#fff9c4,stroke:#f57f17,stroke-width:2px
     classDef hardware fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
     classDef service fill:#f8bbd0,stroke:#c2185b,stroke-width:2px

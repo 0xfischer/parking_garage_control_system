@@ -421,6 +421,106 @@ This example demonstrates how to decouple logic from hardware using interfaces (
 
 [View full example code](examples/hal_state_machine.cpp)
 
+#### 4. Modern Event-Driven State Machine (C++20)
+
+**DER GRÖßTE VORTEIL: VOLLSTÄNDIGE TESTBARKEIT OHNE HARDWARE!**
+
+Diese Implementierung zeigt eine komplett event-driven State Machine mit modernen C++20 Features:
+- **Enum-basierte Event-Types**: Typsichere Event-Definitionen statt fehleranfällige Strings
+- **Generische Payloads**: `std::any` für flexible, typsichere Payload-Daten
+- **Publisher-Subscriber Pattern**: Vollständige Entkopplung von Logik und Hardware
+- **100% testbar ohne Hardware**: Mock-Objekte simulieren Hardware-Verhalten
+
+**Warum ist das so wichtig?**
+
+Bei embedded Systems wie dem Parking Garage Controller ist Hardware-Zugriff oft:
+- ❌ Langsam (Tests dauern Minuten statt Sekunden)
+- ❌ Unzuverlässig (Hardware kann defekt sein)
+- ❌ Teuer (ESP32-Boards müssen verfügbar sein)
+- ❌ Nicht parallel testbar (nur ein Test pro Board)
+- ❌ Schwer zu debuggen (Logging über serielle Schnittstelle)
+
+**Mit Event-Driven Architecture:**
+- ✅ Tests laufen in Millisekunden auf dem PC
+- ✅ Keine Hardware benötigt - CI/CD funktioniert out-of-the-box
+- ✅ Hunderte Tests parallel ausführbar
+- ✅ Volle Debugger-Unterstützung (GDB, Valgrind, etc.)
+- ✅ State Machine Logik komplett isoliert testbar
+- ✅ Mock-Objekte simulieren Sensor-/Aktor-Verhalten perfekt
+
+**Beispiel-Test:**
+```cpp
+void test_motor_start_stop() {
+    // Setup: State Machine + Mock Motor (KEINE echte Hardware!)
+    EventDrivenStateMachine sm;
+    MockMotorController motor;
+
+    sm.subscribe([&motor](const OutputEvent& event) {
+        motor.handleEvent(event);
+    });
+
+    // Test: Start motor
+    sm.processEvent(InputEvent{InputEventType::Start});
+
+    // Assertions: Prüfe State und Mock-Zustand
+    assert(sm.getCurrentState() == State::MotorRunning);
+    assert(motor.isMotorRunning() == true);
+    assert(motor.getCurrentSpeed() == 100);
+
+    // Test: Stop motor
+    sm.processEvent(InputEvent{InputEventType::Stop});
+    assert(motor.isMotorRunning() == false);
+}
+```
+
+**Im echten Parking Garage System:**
+```cpp
+// Produktions-Code: Echter Motor Controller
+class RealMotorController {
+    void handleEvent(const OutputEvent& event) {
+        switch (event.type) {
+            case OutputEventType::MotorOn:
+                gpio_set_level(SERVO_PIN, HIGH);  // ECHTE Hardware!
+                break;
+            case OutputEventType::MotorOff:
+                gpio_set_level(SERVO_PIN, LOW);
+                break;
+        }
+    }
+};
+
+// Test-Code: Mock Motor Controller
+class MockMotorController {
+    void handleEvent(const OutputEvent& event) {
+        receivedEvents.push_back(event.type);  // KEINE Hardware!
+        // Simuliere Verhalten für Tests
+    }
+};
+```
+
+**Die State Machine kennt den Unterschied nicht!** Sie emittiert Events - egal ob ein echter Motor oder ein Mock-Objekt empfängt.
+
+[View full example code](examples/event_driven_state_machine.cpp)
+[View test implementation](examples/event_driven_state_machine_test.cpp)
+
+**Tests ausführen:**
+```bash
+g++ -std=c++20 examples/event_driven_state_machine_test.cpp -o test
+./test
+```
+
+**Vorteile auf einen Blick:**
+
+| Aspekt | Ohne Event-Driven | Mit Event-Driven |
+|--------|------------------|------------------|
+| **Testen** | Nur mit Hardware möglich | 100% ohne Hardware testbar |
+| **Test-Speed** | Minuten (Flash + Run) | Millisekunden (native) |
+| **CI/CD** | Komplex (Hardware-Setup) | Trivial (standard GCC) |
+| **Debugging** | Seriell, eingeschränkt | Voller Debugger (GDB) |
+| **Parallelisierung** | 1 Test pro Board | Unbegrenzt parallel |
+| **Kosten** | Hardware für jeden Dev | Nur Entwickler-PC |
+| **Refactoring** | Riskant (nur Integrationstest) | Sicher (Unit-Tests) |
+
 ## Project Structure
 
 ```

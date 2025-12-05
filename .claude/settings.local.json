@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(idf.py build:*)",
+      "Bash(cat:*)",
+      "Bash(ninja:*)",
+      "Bash(rm:*)",
+      "Bash(pip3 --version:*)",
+      "Bash(. /home/efischer/esp@5.2/v5.2.2/esp-idf/export.sh)",
+      "Bash(tee:*)",
+      "Bash(g++:*)",
+      "Bash(./test/bin_test_exit_gate)",
+      "Bash(./test/bin_test_integration)",
+      "Bash(./test/bin_test_entry_gate)",
+      "Bash(./event_driven_sm:*)",
+      "Bash(./event_driven_sm_test)",
+      "Bash(./hal_example)",
+      "Bash(./hal_test)",
+      "Bash(./event_example)",
+      "Bash(./event_test)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

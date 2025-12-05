@@ -34,11 +34,11 @@ The barrier gates are controlled by servo motors using PWM signals:
 
 ```mermaid
 graph TB
-    subgraph ParkingSystem["<b style='font-size:16px'>PARKINGSYSTEM</b>(Main Orchestrator)"<br/><br/>]
+    subgraph ParkingGarageSystem["<b style='font-size:16px'>PARKING GARAGE SYSTEM</b><br/>(Main Orchestrator)"]
         EventBus["EventBus<br/>(FreeRTOS Queue)"]
         TicketService["TicketService<br/>(Capacity & Tickets)"]
+        Console["Console Commands<br/>(User Interface)"]
     end
-
     subgraph EntryController["EntryGateController<br/>(State Machine)"]
         EntryGate["Gate<br/>(Hardware Abstraction)"]
         EntryButton["Button<br/>(GPIO Input)"]
@@ -59,11 +59,11 @@ graph TB
         ExitGate --> ExitMotor
     end
 
-    Console["Console Commands<br/>(User Interface)"]
+    %%Console["Console Commands<br/>(User Interface)"]
 
-    ParkingSystem --> EntryController
-    ParkingSystem --> ExitController
-    ParkingSystem --> Console
+    ParkingGarageSystem --> EntryController
+    ParkingGarageSystem --> ExitController
+    %%ParkingGarageSystem --> Console
 
     EventBus -.publishes/subscribes.-> EntryController
     EventBus -.publishes/subscribes.-> ExitController
@@ -71,16 +71,16 @@ graph TB
     TicketService -.uses.-> EntryController
     TicketService -.uses.-> ExitController
 
-    Console -.controls.-> TicketService
-    Console -.controls.-> EntryController
-    Console -.controls.-> ExitController
+    %%Console -.controls.-> TicketService
+    %%Console -.controls.-> EntryController
+    %%Console -.controls.-> ExitController
 
     classDef system fill:#e1f5ff,stroke:#01579b,stroke-width:3px
     classDef controller fill:#fff9c4,stroke:#f57f17,stroke-width:2px
     classDef hardware fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
     classDef service fill:#f8bbd0,stroke:#c2185b,stroke-width:2px
 
-    class ParkingSystem,Console system
+    class ParkingGarageSystem,Console system
     class EntryController,ExitController controller
     class EntryGate,ExitGate,EntryButton,EntryLightBarrier,EntryMotor,ExitLightBarrier,ExitMotor hardware
     class EventBus,TicketService service
@@ -91,8 +91,15 @@ graph TB
 ```mermaid
 graph LR
     subgraph Production["Production Mode"]
-        PS1[ParkingSystem] -->|creates with<br/>EntryGateConfig| EC1[EntryGateController]
-        PS1 -->|creates with<br/>ExitGateConfig| XC1[ExitGateController]
+        PS1[ParkingGarageSystem] -->|creates| EB1[EventBus]
+        PS1 -->|creates| TS1[TicketService]
+        PS1 -->|creates with<br/>EntryGateConfig<br/>+ refs| EC1[EntryGateController]
+        PS1 -->|creates with<br/>ExitGateConfig<br/>+ refs| XC1[ExitGateController]
+
+        EB1 -.referenced by.-> EC1
+        EB1 -.referenced by.-> XC1
+        TS1 -.referenced by.-> EC1
+        TS1 -.referenced by.-> XC1
 
         EC1 -->|owns| G1[Gate]
         XC1 -->|owns| G2[Gate]
@@ -101,14 +108,14 @@ graph LR
         G2 -->|creates| HW2[LightBarrier<br/>+ Motor]
     end
 
-    subgraph Testing["Test Mode"]
-        Test[Test Code] -->|injects| EC2[EntryGateController]
-        Test -->|injects| MockGate
-        Test -->|injects| MockButton
-
-        EC2 -.references.-> MockGate
-        EC2 -.references.-> MockButton
-    end
+%%    subgraph Testing["Test Mode"]
+%%        Test[Test Code] -->|injects| EC2[EntryGateController]
+%%        Test -->|injects| MockGate
+%%        Test -->|injects| MockButton
+%%
+%%        EC2 -.references.-> MockGate
+%%        EC2 -.references.-> MockButton
+%%    end
 
     classDef prod fill:#e1f5ff,stroke:#01579b,stroke-width:2px
     classDef test fill:#fff9c4,stroke:#f57f17,stroke-width:2px
@@ -121,7 +128,7 @@ graph LR
 
 - **Config-Based Construction**: Controllers accept config structs with all GPIO pins and settings
 - **Ownership Hierarchy**: Controllers own their Gate hardware (Button, LightBarrier, Motor)
-- **Clean Separation**: ParkingSystem doesn't manage low-level GPIO - only controllers and services
+- **Clean Separation**: ParkingGarageSystem doesn't manage low-level GPIO - only controllers and services
 - **Dual Constructors**: Production mode creates hardware, test mode accepts mocks
 - **Interrupt Setup**: Controllers configure their own GPIO interrupts via `setupGpioInterrupts()`
 
@@ -237,17 +244,41 @@ Available commands in the ESP console:
 ```
 === Parking Garage Control System ===
 
+Available Commands:
   status                    - Show system status
-  ticket_list               - List all tickets
-  ticket_pay <id>           - Pay ticket
-  ticket_validate <id>      - Validate ticket for exit
-  gpio_read <gate> <dev>    - Read GPIO state
-  simulate_entry            - Simulate entry button press
-  simulate_exit             - Simulate car at exit
+  ticket list               - List all tickets
+  ticket pay <id>           - Pay ticket
+  ticket validate <id>      - Validate ticket for exit
+  publish <event>           - Publish an event (use 'list' to see all)
+  gpio read <gate> <dev>    - Read GPIO state
   ?                         - Show this help
   help                      - Show ESP-IDF help
   clear                     - Clear screen
   restart                   - Restart system
+```
+
+### Event Publishing
+
+The `publish` command allows you to trigger events directly:
+
+```bash
+# List all available events
+ParkingGarage> publish list
+
+=== Available Events ===
+
+Entry Gate Events:
+  EntryButtonPressed        - Simulate entry button press
+  EntryLightBarrierBlocked  - Block entry light barrier
+  EntryLightBarrierCleared  - Clear entry light barrier
+
+Exit Gate Events:
+  ExitLightBarrierBlocked   - Block exit light barrier
+  ExitLightBarrierCleared   - Clear exit light barrier
+
+# Publish a specific event
+ParkingGarage> publish EntryButtonPressed
+Publishing event: EntryButtonPressed
 ```
 
 ### Example Usage
@@ -268,8 +299,8 @@ Active Tickets: 0
 
 **2. Einfahrt simulieren**
 ```
-parking> simulate_entry
-Simulating entry button press...
+ParkingGarage> publish EntryButtonPressed
+Publishing event: EntryButtonPressed
 I (1234) EntryGateController: Ticket issued: ID=1
 I (1235) EntryGateController: State: Idle -> OpeningBarrier
 ```
@@ -278,7 +309,7 @@ Idle → CheckingCapacity → IssuingTicket → OpeningBarrier → WaitingForCar
 
 **3. Ticket anzeigen lassen**
 ```
-parking> ticket_list
+ParkingGarage> ticket list
 === Ticket System ===
 Active Tickets: 1
 Capacity: 5
@@ -290,19 +321,19 @@ Active Tickets:
 
 **4. Ticket validieren OHNE Bezahlung**
 ```
-parking> ticket_validate 1
+ParkingGarage> ticket validate 1
 I (5678) ExitGateController: Starting manual ticket validation for ID=1
-W (5679) ExitGateController: Ticket not paid: ID=1 - use 'ticket_pay 1' command first!
+W (5679) ExitGateController: Ticket not paid: ID=1 - use 'ticket pay 1' command first!
 Error: Failed to validate ticket #1
 ```
 ❌ **Validierung fehlgeschlagen!** Das Ticket muss zuerst bezahlt werden.
 
 **5. Ticket bezahlen**
 ```
-parking> ticket_pay 1
+ParkingGarage> ticket pay 1
 Ticket #1 paid successfully
 
-parking> ticket_list
+ParkingGarage> ticket list
 === Ticket System ===
 Active Tickets: 1
 
@@ -312,7 +343,7 @@ Active Tickets:
 
 **6. Ticket validieren MIT Bezahlung**
 ```
-parking> ticket_validate 1
+ParkingGarage> ticket validate 1
 I (7890) ExitGateController: Starting manual ticket validation for ID=1
 I (7891) ExitGateController: Ticket validation successful: ID=1
 I (7892) ExitGateController: State: ValidatingTicket -> OpeningBarrier
@@ -322,8 +353,8 @@ Ticket #1 validated successfully
 
 **7. Ausfahrt simulieren (Auto fährt durch)**
 ```
-parking> simulate_exit
-Simulating car at exit...
+ParkingGarage> publish ExitLightBarrierBlocked
+Publishing event: ExitLightBarrierBlocked
 I (8000) ExitGateController: Car entering exit barrier
 I (8100) ExitGateController: Car exited parking, waiting 2 seconds before closing barrier
 I (10100) ExitGateController: Wait period finished, closing barrier
@@ -332,7 +363,7 @@ Die Light Barrier Events triggern: WaitingForCarToPass → CarPassing → Waitin
 
 **8. Status nach Ausfahrt**
 ```
-parking> status
+ParkingGarage> status
 === Parking System Status ===
 Capacity: 0/5 (5 free)
 Entry Gate: Idle
@@ -343,39 +374,39 @@ Active Tickets: 0
 #### Mehrere Fahrzeuge hintereinander
 
 ```
-parking> simulate_entry    # Ticket #1 erstellt
-parking> simulate_entry    # Ticket #2 erstellt
-parking> simulate_entry    # Ticket #3 erstellt
+ParkingGarage> publish EntryButtonPressed    # Ticket #1 erstellt
+ParkingGarage> publish EntryButtonPressed    # Ticket #2 erstellt
+ParkingGarage> publish EntryButtonPressed    # Ticket #3 erstellt
 
-parking> ticket_list
+ParkingGarage> ticket list
 Active Tickets: 3
   Ticket #1: UNPAID
   Ticket #2: UNPAID
   Ticket #3: UNPAID
 
 # Alle Tickets bezahlen
-parking> ticket_pay 1
-parking> ticket_pay 2
-parking> ticket_pay 3
+ParkingGarage> ticket pay 1
+ParkingGarage> ticket pay 2
+ParkingGarage> ticket pay 3
 
 # Fahrzeuge fahren nacheinander raus
-parking> ticket_validate 1
-parking> simulate_exit
+ParkingGarage> ticket validate 1
+ParkingGarage> publish ExitLightBarrierBlocked
 
-parking> ticket_validate 2
-parking> simulate_exit
+ParkingGarage> ticket validate 2
+ParkingGarage> publish ExitLightBarrierBlocked
 
-parking> ticket_validate 3
-parking> simulate_exit
+ParkingGarage> ticket validate 3
+ParkingGarage> publish ExitLightBarrierBlocked
 ```
 
 #### Parkhaus voll
 
 ```
-parking> status
+ParkingGarage> status
 Capacity: 5/5 (0 free)
 
-parking> simulate_entry
+ParkingGarage> publish EntryButtonPressed
 W (9999) EntryGateController: Parking full! (5/5)
 ```
 ❌ **Einfahrt verweigert!** Das System geht direkt von CheckingCapacity zurück zu Idle.
@@ -656,7 +687,7 @@ parking_garage_control_system/
 │       │   │   └── EspServoOutput.h        # ESP32 servo control
 │       │   ├── tickets/          # Ticket service
 │       │   └── parking/          # Main orchestrator
-│       │       └── ParkingSystem.h         # Creates controllers & services
+│       │       └── ParkingGarageSystem.h   # Creates controllers & services
 │       └── src/                  # Implementation files
 ├── test/
 │   ├── mocks/                    # Mock implementations
@@ -682,7 +713,7 @@ parking_garage_control_system/
 ### Key Files
 
 **Production Code:**
-- [ParkingSystem.cpp](components/parking_system/src/parking/ParkingSystem.cpp) - Main orchestrator, creates controllers with config structs
+- [ParkingGarageSystem.cpp](components/parking_system/src/parking/ParkingGarageSystem.cpp) - Main orchestrator, creates controllers with config structs
 - [EntryGateController.cpp](components/parking_system/src/gates/EntryGateController.cpp) - Entry gate FSM, owns Gate hardware
 - [ExitGateController.cpp](components/parking_system/src/gates/ExitGateController.cpp) - Exit gate FSM, owns Gate hardware
 - [Gate.cpp](components/parking_system/src/gates/Gate.cpp) - Gate abstraction (Button, LightBarrier, Motor)

@@ -18,7 +18,19 @@
       "Bash(./hal_test)",
       "Bash(./event_example)",
       "Bash(./event_test)",
-      "Bash(. /home/efischer/esp@5.2/v5.2.2/esp-idf/export.sh 2)"
+      "Bash(. /home/efischer/esp@5.2/v5.2.2/esp-idf/export.sh 2)",
+      "Bash(test/test_console_workflow.cpp )",
+      "Bash(components/parking_system/src/gates/EntryGateController.cpp )",
+      "Bash(components/parking_system/src/gates/ExitGateController.cpp )",
+      "Bash(components/parking_system/src/tickets/TicketService.cpp )",
+      "Bash(components/parking_system/src/events/FreeRtosEventBus.cpp )",
+      "Bash(components/parking_system/src/gates/Gate.cpp)",
+      "Bash(components/parking_system/src/events/FreeRtosEventBus.cpp)",
+      "Bash(components/parking_system/src/hal/EspGpioInput.cpp )",
+      "Bash(components/parking_system/src/hal/EspServoOutput.cpp)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(./test/bin_test_console_workflow)"
     ],
     "deny": [],
     "ask": []

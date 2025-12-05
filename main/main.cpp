@@ -4,13 +4,14 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
-#include "ParkingSystem.h"
+#include "ParkingGarageSystem.h"
+#include "ParkingGarageConfig.h"
 #include "console_commands.h"
 
 static const char* TAG = "Main";
 
-// Global parking system instance
-static ParkingSystem* g_parkingSystem = nullptr;
+// Global parking garage system instance
+static ParkingGarageSystem* g_parkingSystem = nullptr;
 
 /**
  * @brief Main event loop task
@@ -19,7 +20,7 @@ static ParkingSystem* g_parkingSystem = nullptr;
  * This is the heart of the event-driven architecture.
  */
 static void event_loop_task(void* pvParameters) {
-    auto* system = static_cast<ParkingSystem*>(pvParameters);
+    auto* system = static_cast<ParkingGarageSystem*>(pvParameters);
     IEventBus& eventBus = system->getEventBus();
 
     ESP_LOGI(TAG, "Event loop task started");
@@ -49,27 +50,6 @@ static void init_nvs() {
     ESP_LOGI(TAG, "NVS initialized");
 }
 
-/**
- * @brief Get parking system configuration from Kconfig
- */
-static ParkingSystem::Config get_system_config() {
-    ParkingSystem::Config config = {};
-
-    // GPIO configuration
-    config.entryButtonPin = static_cast<gpio_num_t>(CONFIG_PARKING_ENTRY_BUTTON_GPIO);
-    config.entryLightBarrierPin = static_cast<gpio_num_t>(CONFIG_PARKING_ENTRY_LIGHT_BARRIER_GPIO);
-    config.entryMotorPin = static_cast<gpio_num_t>(CONFIG_PARKING_ENTRY_MOTOR_GPIO);
-    config.exitLightBarrierPin = static_cast<gpio_num_t>(CONFIG_PARKING_EXIT_LIGHT_BARRIER_GPIO);
-    config.exitMotorPin = static_cast<gpio_num_t>(CONFIG_PARKING_EXIT_MOTOR_GPIO);
-
-    // System configuration
-    config.capacity = CONFIG_PARKING_CAPACITY;
-    config.barrierTimeoutMs = CONFIG_PARKING_BARRIER_TIMEOUT_MS;
-    config.buttonDebounceMs = CONFIG_PARKING_BUTTON_DEBOUNCE_MS;
-
-    return config;
-}
-
 extern "C" void app_main(void) {
     ESP_LOGI(TAG, "========================================");
     ESP_LOGI(TAG, "  Parking Garage Control System");
@@ -81,14 +61,14 @@ extern "C" void app_main(void) {
     init_nvs();
 
     // Get configuration from Kconfig
-    ParkingSystem::Config config = get_system_config();
+    ParkingGarageConfig config = ParkingGarageConfig::fromKconfig();
 
-    // Create parking system
-    ESP_LOGI(TAG, "Creating parking system...");
-    g_parkingSystem = new ParkingSystem(config);
+    // Create parking garage system
+    ESP_LOGI(TAG, "Creating parking garage system...");
+    g_parkingSystem = new ParkingGarageSystem(config);
 
     // Initialize system (setup GPIO interrupts, etc.)
-    ESP_LOGI(TAG, "Initializing parking system...");
+    ESP_LOGI(TAG, "Initializing parking garage system...");
     g_parkingSystem->initialize();
 
     // Create event loop task

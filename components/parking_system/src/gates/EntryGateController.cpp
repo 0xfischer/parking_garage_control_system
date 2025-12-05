@@ -4,6 +4,7 @@
 static const char* TAG = "EntryGateController";
 static const char *entryGateStateToString(EntryGateState state);
 
+#ifndef UNIT_TEST
 // Production constructor - creates own Gate
 EntryGateController::EntryGateController(IEventBus &eventBus,
                                          ITicketService &ticketService,
@@ -41,6 +42,7 @@ EntryGateController::EntryGateController(IEventBus &eventBus,
 
     ESP_LOGI(TAG, "EntryGateController initialized (production mode)");
 }
+#endif // UNIT_TEST
 
 // Test constructor - uses injected dependencies
 EntryGateController::EntryGateController(

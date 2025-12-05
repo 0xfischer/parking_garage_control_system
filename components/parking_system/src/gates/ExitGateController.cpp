@@ -5,6 +5,7 @@
 static const char* TAG = "ExitGateController";
 static const char *exitGateStateToString(ExitGateState state);
 
+#ifndef UNIT_TEST
 // Production constructor - creates own Gate
 ExitGateController::ExitGateController(IEventBus &eventBus, ITicketService &ticketService, const ExitGateConfig &config)
     : m_eventBus(eventBus), m_ticketService(ticketService), m_state(ExitGateState::Idle),
@@ -44,6 +45,7 @@ ExitGateController::ExitGateController(IEventBus &eventBus, ITicketService &tick
 
     ESP_LOGI(TAG, "ExitGateController initialized (production mode)");
 }
+#endif // UNIT_TEST
 
 // Test constructor - uses injected dependencies
 ExitGateController::ExitGateController(

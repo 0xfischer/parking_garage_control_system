@@ -66,7 +66,7 @@ bool FreeRtosEventBus::publishFromISR(const Event& event) {
     BaseType_t result = xQueueSendFromISR(m_queue, &timestampedEvent, &xHigherPriorityTaskWoken);
 
     if (xHigherPriorityTaskWoken == pdTRUE) {
-        portYIELD_FROM_ISR();
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 
     return result == pdTRUE;

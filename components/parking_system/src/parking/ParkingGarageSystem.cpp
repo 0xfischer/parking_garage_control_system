@@ -1,13 +1,13 @@
-#include "ParkingSystem.h"
+#include "ParkingGarageSystem.h"
 #include "esp_log.h"
 #include <cstdio>
 
-static const char* TAG = "ParkingSystem";
+static const char* TAG = "ParkingGarageSystem";
 
-ParkingSystem::ParkingSystem(const Config& config)
+ParkingGarageSystem::ParkingGarageSystem(const ParkingGarageConfig& config)
     : m_config(config)
 {
-    ESP_LOGI(TAG, "Creating ParkingSystem...");
+    ESP_LOGI(TAG, "Creating ParkingGarageSystem...");
     ESP_LOGI(TAG, "  Capacity: %lu", config.capacity);
     ESP_LOGI(TAG, "  Entry Button: GPIO %d", config.entryButtonPin);
     ESP_LOGI(TAG, "  Entry Light Barrier: GPIO %d", config.entryLightBarrierPin);
@@ -15,10 +15,7 @@ ParkingSystem::ParkingSystem(const Config& config)
     ESP_LOGI(TAG, "  Exit Light Barrier: GPIO %d", config.exitLightBarrierPin);
     ESP_LOGI(TAG, "  Exit Motor: GPIO %d", config.exitMotorPin);
 
-    // Create event bus
     m_eventBus = std::make_unique<FreeRtosEventBus>(32);
-
-    // Create ticket service
     m_ticketService = std::make_unique<TicketService>(config.capacity);
 
     // Create gate controllers (they manage their own Gate hardware)
@@ -47,20 +44,20 @@ ParkingSystem::ParkingSystem(const Config& config)
         }
     );
 
-    ESP_LOGI(TAG, "ParkingSystem created successfully");
+    ESP_LOGI(TAG, "ParkingGarageSystem created successfully");
 }
 
-void ParkingSystem::initialize() {
-    ESP_LOGI(TAG, "Initializing ParkingSystem...");
+void ParkingGarageSystem::initialize() {
+    ESP_LOGI(TAG, "Initializing ParkingGarageSystem...");
 
     // Setup GPIO interrupts in the controllers
     m_entryGate->setupGpioInterrupts();
     m_exitGate->setupGpioInterrupts();
 
-    ESP_LOGI(TAG, "ParkingSystem initialized and ready");
+    ESP_LOGI(TAG, "ParkingGarageSystem initialized and ready");
 }
 
-void ParkingSystem::getStatus(char* buffer, size_t bufferSize) const {
+void ParkingGarageSystem::getStatus(char* buffer, size_t bufferSize) const {
     if (!buffer || bufferSize == 0) {
         return;
     }

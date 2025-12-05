@@ -2,6 +2,7 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include <cstring>
+#include <atomic>
 
 static const char* TAG = "EspGpioInput";
 
@@ -80,16 +81,16 @@ void IRAM_ATTR EspGpioInput::gpioIsrHandler(void* arg) {
     auto* input = static_cast<EspGpioInput*>(arg);
     if (input) {
         // Simple debug: count interrupts (visible in debugger)
-        static volatile uint32_t isr_count = 0;
-        isr_count++;
+    static std::atomic<uint32_t> isr_count{0};
+    isr_count.fetch_add(1, std::memory_order_relaxed);
         input->handleInterrupt();
     }
 }
 
 void IRAM_ATTR EspGpioInput::handleInterrupt() {
     // Debug counter
-    static volatile uint32_t handle_count = 0;
-    handle_count++;
+    static std::atomic<uint32_t> handle_count{0};
+    handle_count.fetch_add(1, std::memory_order_relaxed);
 
     // Read current level immediately
     bool level = gpio_get_level(m_pin) != 0;
@@ -101,8 +102,8 @@ void IRAM_ATTR EspGpioInput::handleInterrupt() {
 
         if (elapsed_ms < m_debounceMs) {
             // Debug: count debounced interrupts
-            static volatile uint32_t debounce_blocked = 0;
-            debounce_blocked++;
+            static std::atomic<uint32_t> debounce_blocked{0};
+            debounce_blocked.fetch_add(1, std::memory_order_relaxed);
             return;  // Ignore this interrupt (debounce period)
         }
 

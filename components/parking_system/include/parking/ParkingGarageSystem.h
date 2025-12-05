@@ -4,10 +4,11 @@
 #include "ExitGateController.h"
 #include "FreeRtosEventBus.h"
 #include "TicketService.h"
+#include "ParkingGarageConfig.h"
 #include <memory>
 
 /**
- * @brief Main parking system orchestrator
+ * @brief Main parking garage system orchestrator
  *
  * Manages all components:
  * - Event bus
@@ -16,35 +17,18 @@
  * - Exit gate controller
  * - GPIO hardware setup
  */
-class ParkingSystem {
+class ParkingGarageSystem {
 public:
-    /**
-     * @brief Configuration for parking system
-     */
-    struct Config {
-        // GPIO pins
-        gpio_num_t entryButtonPin;
-        gpio_num_t entryLightBarrierPin;
-        gpio_num_t entryMotorPin;
-        gpio_num_t exitLightBarrierPin;
-        gpio_num_t exitMotorPin;
-
-        // System parameters
-        uint32_t capacity;
-        uint32_t barrierTimeoutMs;
-        uint32_t buttonDebounceMs;
-    };
-
     /**
      * @brief Construct parking system
      * @param config System configuration
      */
-    explicit ParkingSystem(const Config& config);
-    ~ParkingSystem() = default;
+    explicit ParkingGarageSystem(const ParkingGarageConfig& config);
+    ~ParkingGarageSystem() = default;
 
     // Prevent copying
-    ParkingSystem(const ParkingSystem&) = delete;
-    ParkingSystem& operator=(const ParkingSystem&) = delete;
+    ParkingGarageSystem(const ParkingGarageSystem&) = delete;
+    ParkingGarageSystem& operator=(const ParkingGarageSystem&) = delete;
 
     /**
      * @brief Initialize system and start event processing
@@ -87,5 +71,5 @@ private:
     std::unique_ptr<EntryGateController> m_entryGate;
     std::unique_ptr<ExitGateController> m_exitGate;
 
-    Config m_config;
+    ParkingGarageConfig m_config;
 };

@@ -16,8 +16,9 @@ idf_component_register(
         "src/gates/EntryGateController.cpp"
         "src/gates/ExitGateController.cpp"
 
-        # Parking system sources
-        "src/parking/ParkingSystem.cpp"
+        # Parking garage system sources
+    "src/parking/ParkingGarageSystem.cpp"
+    "src/parking/ParkingGarageConfig.cpp"
 
     INCLUDE_DIRS
         "include"

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "ParkingSystem.h"
+#include "ParkingGarageSystem.h"
 
 /**
  * @brief Initialize and register console commands
- * @param system Parking system instance
+ * @param system Parking garage system instance
  */
-void console_init(ParkingSystem* system);
+void console_init(ParkingGarageSystem* system);
 
 /**
  * @brief Start console REPL (Read-Eval-Print Loop)

@@ -6,7 +6,7 @@
 #include <cstring>
 
 static const char* TAG = "Console";
-static ParkingSystem* g_system = nullptr;
+static ParkingGarageSystem* g_system = nullptr;
 static esp_console_repl_t* g_repl = nullptr;
 
 // Command: status
@@ -23,196 +23,179 @@ static int cmd_status(int argc, char** argv) {
     return 0;
 }
 
-// Command: ticket list
-static int cmd_ticket_list(int argc, char** argv) {
+// Command: ticket (with subcommands: list, pay, validate)
+static int cmd_ticket(int argc, char** argv) {
     if (!g_system) {
         printf("Error: System not initialized\n");
         return 1;
     }
 
-    auto& ticketService = g_system->getTicketService();
-    uint32_t active = ticketService.getActiveTicketCount();
-    uint32_t capacity = ticketService.getCapacity();
+    if (argc < 2) {
+        printf("Usage: ticket <list|pay|validate> [id]\n");
+        printf("  ticket list           - List all tickets\n");
+        printf("  ticket pay <id>       - Pay ticket\n");
+        printf("  ticket validate <id>  - Validate ticket for exit\n");
+        return 1;
+    }
 
-    printf("=== Ticket System ===\n");
-    printf("Active Tickets: %lu\n", active);
-    printf("Capacity: %lu\n", capacity);
-    printf("Available Spaces: %lu\n", capacity - active);
+    const char* subcommand = argv[1];
 
-    // List all tickets (simplified - in real system would have better data structure)
-    printf("\nActive Tickets:\n");
-    for (uint32_t id = 1; id < 100; id++) {  // Check first 100 IDs
-        Ticket ticket;
-        if (ticketService.getTicketInfo(id, ticket) && !ticket.isUsed) {
-            printf("  Ticket #%lu: %s\n", id, ticket.isPaid ? "PAID" : "UNPAID");
+    // Subcommand: list
+    if (strcmp(subcommand, "list") == 0) {
+        auto& ticketService = g_system->getTicketService();
+        uint32_t active = ticketService.getActiveTicketCount();
+        uint32_t capacity = ticketService.getCapacity();
+
+        printf("=== Ticket System ===\n");
+        printf("Active Tickets: %lu\n", active);
+        printf("Capacity: %lu\n", capacity);
+        printf("Available Spaces: %lu\n", capacity - active);
+
+        // List all tickets (simplified - in real system would have better data structure)
+        printf("\nActive Tickets:\n");
+        for (uint32_t id = 1; id < 100; id++) {  // Check first 100 IDs
+            Ticket ticket;
+            if (ticketService.getTicketInfo(id, ticket) && !ticket.isUsed) {
+                printf("  Ticket #%lu: %s\n", id, ticket.isPaid ? "PAID" : "UNPAID");
+            }
+        }
+
+        return 0;
+    }
+
+    // Subcommand: pay
+    if (strcmp(subcommand, "pay") == 0) {
+        if (argc < 3) {
+            printf("Error: Missing ticket ID\n");
+            printf("Usage: ticket pay <id>\n");
+            return 1;
+        }
+
+        uint32_t ticketId = atoi(argv[2]);
+        auto& ticketService = g_system->getTicketService();
+
+        if (ticketService.payTicket(ticketId)) {
+            printf("Ticket #%lu paid successfully\n", ticketId);
+            return 0;
+        } else {
+            printf("Error: Failed to pay ticket #%lu (not found?)\n", ticketId);
+            return 1;
         }
     }
 
-    return 0;
+    // Subcommand: validate
+    if (strcmp(subcommand, "validate") == 0) {
+        if (argc < 3) {
+            printf("Error: Missing ticket ID\n");
+            printf("Usage: ticket validate <id>\n");
+            return 1;
+        }
+
+        uint32_t ticketId = atoi(argv[2]);
+
+        // Try to manually validate through exit gate
+        if (g_system->getExitGate().validateTicketManually(ticketId)) {
+            printf("Ticket #%lu validated successfully\n", ticketId);
+            return 0;
+        } else {
+            printf("Error: Failed to validate ticket #%lu\n", ticketId);
+            return 1;
+        }
+    }
+
+    printf("Error: Unknown subcommand '%s'\n", subcommand);
+    printf("Usage: ticket <list|pay|validate> [id]\n");
+    return 1;
 }
 
-// Command: ticket pay <id>
-static struct {
-    struct arg_int* ticket_id;
-    struct arg_end* end;
-} ticket_pay_args;
-
-static int cmd_ticket_pay(int argc, char** argv) {
-    int nerrors = arg_parse(argc, argv, (void**)&ticket_pay_args);
-    if (nerrors != 0) {
-        arg_print_errors(stderr, ticket_pay_args.end, argv[0]);
-        return 1;
-    }
-
-    if (!g_system) {
-        printf("Error: System not initialized\n");
-        return 1;
-    }
-
-    uint32_t ticketId = ticket_pay_args.ticket_id->ival[0];
-    auto& ticketService = g_system->getTicketService();
-
-    if (ticketService.payTicket(ticketId)) {
-        printf("Ticket #%lu paid successfully\n", ticketId);
-        return 0;
-    } else {
-        printf("Error: Failed to pay ticket #%lu (not found?)\n", ticketId);
-        return 1;
-    }
-}
-
-// Command: ticket validate <id>
-static struct {
-    struct arg_int* ticket_id;
-    struct arg_end* end;
-} ticket_validate_args;
-
-static int cmd_ticket_validate(int argc, char** argv) {
-    int nerrors = arg_parse(argc, argv, (void**)&ticket_validate_args);
-    if (nerrors != 0) {
-        arg_print_errors(stderr, ticket_validate_args.end, argv[0]);
-        return 1;
-    }
-
-    if (!g_system) {
-        printf("Error: System not initialized\n");
-        return 1;
-    }
-
-    uint32_t ticketId = ticket_validate_args.ticket_id->ival[0];
-
-    // Try to manually validate through exit gate
-    if (g_system->getExitGate().validateTicketManually(ticketId)) {
-        printf("Ticket #%lu validated successfully\n", ticketId);
-        return 0;
-    } else {
-        printf("Error: Failed to validate ticket #%lu\n", ticketId);
-        return 1;
-    }
-}
-
-// Command: gpio read <entry|exit> <button|barrier|motor>
+// Command: gpio (with subcommands: read)
 static int cmd_gpio_read(int argc, char** argv) {
-    if (argc < 3) {
-        printf("Usage: gpio read <entry|exit> <button|barrier|motor>\n");
-        return 1;
-    }
-
     if (!g_system) {
         printf("Error: System not initialized\n");
         return 1;
     }
 
-    // Parse arguments manually
-    const char* gate = argv[1];
-    const char* device = argv[2];
+    if (argc < 2) {
+        printf("Usage: gpio <read> <entry|exit> <button|barrier|motor>\n");
+        return 1;
+    }
 
-    // This is a simplified version - in production you'd store GPIO references
-    printf("GPIO read: %s %s\n", gate, device);
-    printf("(GPIO direct read not implemented in this version - use 'status' command)\n");
+    const char* subcommand = argv[1];
 
-    return 0;
+    // Subcommand: read
+    if (strcmp(subcommand, "read") == 0) {
+        if (argc < 4) {
+            printf("Usage: gpio read <entry|exit> <button|barrier|motor>\n");
+            return 1;
+        }
+
+        const char* gate = argv[2];
+        const char* device = argv[3];
+
+        // This is a simplified version - in production you'd store GPIO references
+        printf("GPIO read: %s %s\n", gate, device);
+        printf("(GPIO direct read not implemented in this version - use 'status' command)\n");
+
+        return 0;
+    }
+
+    printf("Error: Unknown subcommand '%s'\n", subcommand);
+    printf("Usage: gpio <read> <entry|exit> <button|barrier|motor>\n");
+    return 1;
 }
 
-// Command: simulate entry
-static int cmd_simulate_entry(int argc, char** argv) {
+// Command: publish (with subcommands: list or event name)
+static int cmd_publish(int argc, char** argv) {
     if (!g_system) {
         printf("Error: System not initialized\n");
         return 1;
     }
 
-    printf("Simulating entry button press...\n");
-    Event event(EventType::EntryButtonPressed);
-    g_system->getEventBus().publish(event);
-
-    return 0;
-}
-
-// Command: simulate exit
-static int cmd_simulate_exit(int argc, char** argv) {
-    if (!g_system) {
-        printf("Error: System not initialized\n");
+    if (argc < 2) {
+        printf("Usage: publish <event-name|list>\n");
+        printf("  publish list  - Show all available events\n");
+        printf("  publish <event-name>  - Publish an event\n");
         return 1;
     }
 
-    printf("Simulating car at exit...\n");
-    Event event(EventType::ExitLightBarrierBlocked);
-    g_system->getEventBus().publish(event);
+    const char* eventName = argv[1];
 
-    return 0;
-}
+    // Show list of available events
+    if (strcmp(eventName, "list") == 0) {
+        printf("\n=== Available Events ===\n\n");
+        printf("Entry Gate Events:\n");
+        printf("  EntryButtonPressed        - Simulate entry button press\n");
+        printf("  EntryLightBarrierBlocked  - Block entry light barrier\n");
+        printf("  EntryLightBarrierCleared  - Clear entry light barrier\n");
+        printf("\n");
+        printf("Exit Gate Events:\n");
+        printf("  ExitLightBarrierBlocked   - Block exit light barrier\n");
+        printf("  ExitLightBarrierCleared   - Clear exit light barrier\n");
+        printf("\n");
+        return 0;
+    }
 
-// Command: entry barrier block
-static int cmd_entry_barrier_block(int argc, char** argv) {
-    if (!g_system) {
-        printf("Error: System not initialized\n");
+    // Publish the requested event
+    EventType eventType;
+
+    if (strcmp(eventName, "EntryButtonPressed") == 0) {
+        eventType = EventType::EntryButtonPressed;
+    } else if (strcmp(eventName, "EntryLightBarrierBlocked") == 0) {
+        eventType = EventType::EntryLightBarrierBlocked;
+    } else if (strcmp(eventName, "EntryLightBarrierCleared") == 0) {
+        eventType = EventType::EntryLightBarrierCleared;
+    } else if (strcmp(eventName, "ExitLightBarrierBlocked") == 0) {
+        eventType = EventType::ExitLightBarrierBlocked;
+    } else if (strcmp(eventName, "ExitLightBarrierCleared") == 0) {
+        eventType = EventType::ExitLightBarrierCleared;
+    } else {
+        printf("Error: Unknown event '%s'\n", eventName);
+        printf("Use 'publish list' to see available events\n");
         return 1;
     }
 
-    printf("Entry light barrier: BLOCKED\n");
-    Event event(EventType::EntryLightBarrierBlocked);
-    g_system->getEventBus().publish(event);
-
-    return 0;
-}
-
-// Command: entry barrier clear
-static int cmd_entry_barrier_clear(int argc, char** argv) {
-    if (!g_system) {
-        printf("Error: System not initialized\n");
-        return 1;
-    }
-
-    printf("Entry light barrier: CLEAR\n");
-    Event event(EventType::EntryLightBarrierCleared);
-    g_system->getEventBus().publish(event);
-
-    return 0;
-}
-
-// Command: exit barrier block
-static int cmd_exit_barrier_block(int argc, char** argv) {
-    if (!g_system) {
-        printf("Error: System not initialized\n");
-        return 1;
-    }
-
-    printf("Exit light barrier: BLOCKED\n");
-    Event event(EventType::ExitLightBarrierBlocked);
-    g_system->getEventBus().publish(event);
-
-    return 0;
-}
-
-// Command: exit barrier clear
-static int cmd_exit_barrier_clear(int argc, char** argv) {
-    if (!g_system) {
-        printf("Error: System not initialized\n");
-        return 1;
-    }
-
-    printf("Exit light barrier: CLEAR\n");
-    Event event(EventType::ExitLightBarrierCleared);
+    printf("Publishing event: %s\n", eventName);
+    Event event(eventType);
     g_system->getEventBus().publish(event);
 
     return 0;
@@ -223,16 +206,11 @@ static int cmd_help(int argc, char** argv) {
     printf("\n=== Parking Garage Control System ===\n\n");
     printf("Available Commands:\n");
     printf("  status                    - Show system status\n");
-    printf("  ticket_list               - List all tickets\n");
-    printf("  ticket_pay <id>           - Pay ticket\n");
-    printf("  ticket_validate <id>      - Validate ticket for exit\n");
-    printf("  gpio_read <gate> <dev>    - Read GPIO state\n");
-    printf("  simulate_entry            - Simulate entry button press\n");
-    printf("  simulate_exit             - Simulate car at exit\n");
-    printf("  entry_barrier_block       - Block entry light barrier\n");
-    printf("  entry_barrier_clear       - Clear entry light barrier\n");
-    printf("  exit_barrier_block        - Block exit light barrier\n");
-    printf("  exit_barrier_clear        - Clear exit light barrier\n");
+    printf("  ticket list               - List all tickets\n");
+    printf("  ticket pay <id>           - Pay ticket\n");
+    printf("  ticket validate <id>      - Validate ticket for exit\n");
+    printf("  publish <event>           - Publish an event (use 'list' to see all)\n");
+    printf("  gpio read <gate> <dev>    - Read GPIO state\n");
     printf("  ?                         - Show this help\n");
     printf("  help                      - Show ESP-IDF help\n");
     printf("  clear                     - Clear screen\n");
@@ -241,7 +219,7 @@ static int cmd_help(int argc, char** argv) {
     return 0;
 }
 
-void console_init(ParkingSystem* system) {
+void console_init(ParkingGarageSystem* system) {
     g_system = system;
 
     // Register built-in help command first
@@ -253,72 +231,43 @@ void console_init(ParkingSystem* system) {
         .help = "Show system status",
         .hint = nullptr,
         .func = &cmd_status,
+        .argtable = nullptr,
     };
     esp_console_cmd_register(&status_cmd);
 
-    const esp_console_cmd_t ticket_list_cmd = {
-        .command = "ticket_list",
-        .help = "List all tickets",
+    const esp_console_cmd_t ticket_cmd = {
+        .command = "ticket",
+        .help = "Ticket management (list|pay|validate)",
         .hint = nullptr,
-        .func = &cmd_ticket_list,
+        .func = &cmd_ticket,
+        .argtable = nullptr,
     };
-    esp_console_cmd_register(&ticket_list_cmd);
+    esp_console_cmd_register(&ticket_cmd);
 
-    // ticket pay command
-    ticket_pay_args.ticket_id = arg_int1(nullptr, nullptr, "<id>", "Ticket ID");
-    ticket_pay_args.end = arg_end(2);
-
-    const esp_console_cmd_t ticket_pay_cmd = {
-        .command = "ticket_pay",
-        .help = "Pay ticket",
+    const esp_console_cmd_t publish_cmd = {
+        .command = "publish",
+        .help = "Publish an event (use 'list' to see all)",
         .hint = nullptr,
-        .func = &cmd_ticket_pay,
-        .argtable = &ticket_pay_args
+        .func = &cmd_publish,
+        .argtable = nullptr,
     };
-    esp_console_cmd_register(&ticket_pay_cmd);
-
-    // ticket validate command
-    ticket_validate_args.ticket_id = arg_int1(nullptr, nullptr, "<id>", "Ticket ID");
-    ticket_validate_args.end = arg_end(2);
-
-    const esp_console_cmd_t ticket_validate_cmd = {
-        .command = "ticket_validate",
-        .help = "Validate ticket",
-        .hint = nullptr,
-        .func = &cmd_ticket_validate,
-        .argtable = &ticket_validate_args
-    };
-    esp_console_cmd_register(&ticket_validate_cmd);
+    esp_console_cmd_register(&publish_cmd);
 
     const esp_console_cmd_t gpio_read_cmd = {
-        .command = "gpio_read",
-        .help = "Read GPIO state",
+        .command = "gpio",
+        .help = "GPIO operations (read)",
         .hint = nullptr,
         .func = &cmd_gpio_read,
+        .argtable = nullptr,
     };
     esp_console_cmd_register(&gpio_read_cmd);
-
-    const esp_console_cmd_t simulate_entry_cmd = {
-        .command = "simulate_entry",
-        .help = "Simulate entry button press",
-        .hint = nullptr,
-        .func = &cmd_simulate_entry,
-    };
-    esp_console_cmd_register(&simulate_entry_cmd);
-
-    const esp_console_cmd_t simulate_exit_cmd = {
-        .command = "simulate_exit",
-        .help = "Simulate car at exit",
-        .hint = nullptr,
-        .func = &cmd_simulate_exit,
-    };
-    esp_console_cmd_register(&simulate_exit_cmd);
 
     const esp_console_cmd_t help_cmd = {
         .command = "?",
         .help = "Show available commands",
         .hint = nullptr,
         .func = &cmd_help,
+        .argtable = nullptr,
     };
     esp_console_cmd_register(&help_cmd);
 
@@ -328,10 +277,11 @@ void console_init(ParkingSystem* system) {
 void console_start() {
     // Configure and start REPL
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    repl_config.prompt = "parking> ";
+    repl_config.prompt = "ParkingGarage> ";
     repl_config.max_cmdline_length = 256;
 
     // Configure UART for console
+
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
 
     // Create UART REPL

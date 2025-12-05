@@ -30,32 +30,91 @@ The barrier gates are controlled by servo motors using PWM signals:
 
 ## Architecture
 
+### System Overview
+
+```mermaid
+graph TB
+    subgraph ParkingSystem["ParkingSystem<br/>(Main Orchestrator)"]
+        EventBus["EventBus<br/>(FreeRTOS Queue)"]
+        TicketService["TicketService<br/>(Capacity & Tickets)"]
+    end
+
+    subgraph EntryController["EntryGateController<br/>(State Machine)"]
+        EntryGate["Gate<br/>(Hardware Abstraction)"]
+        EntryButton["Button<br/>(GPIO Input)"]
+        EntryLightBarrier["Light Barrier<br/>(GPIO Input)"]
+        EntryMotor["Servo Motor<br/>(PWM Output)"]
+
+        EntryGate --> EntryButton
+        EntryGate --> EntryLightBarrier
+        EntryGate --> EntryMotor
+    end
+
+    subgraph ExitController["ExitGateController<br/>(State Machine)"]
+        ExitGate["Gate<br/>(Hardware Abstraction)"]
+        ExitLightBarrier["Light Barrier<br/>(GPIO Input)"]
+        ExitMotor["Servo Motor<br/>(PWM Output)"]
+
+        ExitGate --> ExitLightBarrier
+        ExitGate --> ExitMotor
+    end
+
+    Console["Console Commands<br/>(User Interface)"]
+
+    ParkingSystem --> EntryController
+    ParkingSystem --> ExitController
+    ParkingSystem --> Console
+
+    EventBus -.publishes/subscribes.-> EntryController
+    EventBus -.publishes/subscribes.-> ExitController
+
+    TicketService -.uses.-> EntryController
+    TicketService -.uses.-> ExitController
+
+    Console -.controls.-> TicketService
+    Console -.controls.-> EntryController
+    Console -.controls.-> ExitController
+
+    classDef system fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef controller fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef hardware fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
+    classDef service fill:#f8bbd0,stroke:#c2185b,stroke-width:2px
+
+    class ParkingSystem,Console system
+    class EntryController,ExitController controller
+    class EntryGate,ExitGate,EntryButton,EntryLightBarrier,EntryMotor,ExitLightBarrier,ExitMotor hardware
+    class EventBus,TicketService service
 ```
-┌─────────────────────────────────────────────────────┐
-│                  ParkingSystem                       │
-│         (Main Orchestrator & Initialization)         │
-└────────────┬─────────────────┬─────────────┬────────┘
-             │                 │             │
-    ┌────────▼────────┐   ┌────▼─────┐  ┌───▼────────┐
-    │   EventBus      │   │ Ticket   │  │  Console   │
-    │  (FreeRTOS)     │   │ Service  │  │  Commands  │
-    └────┬────┬───────┘   └──────────┘  └────────────┘
-         │    │
- ┌───────┘    └───────┐
- │                    │
-┌▼──────────────┐  ┌──▼─────────────┐
-│ Entry Gate    │  │ Exit Gate      │
-│ Controller    │  │ Controller     │
-│ ┌───────────┐ │  │ ┌────────────┐ │
-│ │   Gate    │ │  │ │   Gate     │ │
-│ │ ┌───────┐ │ │  │ │ ┌────────┐ │ │
-│ │ │Button │ │ │  │ │ │ Light  │ │ │
-│ │ │Light  │ │ │  │ │ │Barrier │ │ │
-│ │ │Barrier│ │ │  │ │ │ Motor  │ │ │
-│ │ │Motor  │ │ │  │ │ └────────┘ │ │
-│ │ └───────┘ │ │  │ └────────────┘ │
-│ └───────────┘ │  └────────────────┘
-└───────────────┘
+
+### Ownership & Construction Flow
+
+```mermaid
+graph LR
+    subgraph Production["Production Mode"]
+        PS1[ParkingSystem] -->|creates with<br/>EntryGateConfig| EC1[EntryGateController]
+        PS1 -->|creates with<br/>ExitGateConfig| XC1[ExitGateController]
+
+        EC1 -->|owns| G1[Gate]
+        XC1 -->|owns| G2[Gate]
+
+        G1 -->|creates| HW1[Button + LightBarrier<br/>+ Motor]
+        G2 -->|creates| HW2[LightBarrier<br/>+ Motor]
+    end
+
+    subgraph Testing["Test Mode"]
+        Test[Test Code] -->|injects| EC2[EntryGateController]
+        Test -->|injects| MockGate
+        Test -->|injects| MockButton
+
+        EC2 -.references.-> MockGate
+        EC2 -.references.-> MockButton
+    end
+
+    classDef prod fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef test fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+
+    class PS1,EC1,XC1,G1,G2,HW1,HW2 prod
+    class Test,EC2,MockGate,MockButton test
 ```
 
 **Key Design Principles:**

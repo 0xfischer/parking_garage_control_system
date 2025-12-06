@@ -12,12 +12,12 @@ EspGpioInput::EspGpioInput(gpio_num_t pin, uint32_t debounceMs)
     , m_handler(nullptr)
     , m_lastInterruptTime(0)
 {
-    // Configure GPIO (external pull-up in Wokwi)
+    // Configure GPIO: enable internal pull-up by default for stable input
     gpio_config_t io_conf = {};
     io_conf.pin_bit_mask = (1ULL << pin);
     io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;   // Disable internal pull-up (using external)
-    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;    // Use internal pull-up to avoid floating
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE; // Adjust per sensor if needed
     io_conf.intr_type = GPIO_INTR_ANYEDGE;  // Interrupt on both edges
 
     esp_err_t ret = gpio_config(&io_conf);
@@ -26,7 +26,7 @@ EspGpioInput::EspGpioInput(gpio_num_t pin, uint32_t debounceMs)
     } else {
         // Read initial level immediately after configuration
         int initial_level = gpio_get_level(pin);
-        ESP_LOGW(TAG, "*** GPIO %d configured, initial level: %d ***", pin, initial_level);
+        ESP_LOGW(TAG, "*** GPIO %d configured, pull: PULLUP, initial level: %d ***", pin, initial_level);
     }
 }
 

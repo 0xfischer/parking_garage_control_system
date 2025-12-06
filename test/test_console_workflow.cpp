@@ -18,8 +18,11 @@
 #include "MockGpioInput.h"
 
 // Production code
+#include "ParkingGarageSystem.h"
 #include "EntryGateController.h"
 #include "ExitGateController.h"
+// Console harness
+#include "ConsoleHarness.h"
 
 // Color codes for output
 #define COLOR_GREEN "\033[32m"
@@ -47,14 +50,15 @@ void printInfo(const char* msg) {
 void test_complete_entry_flow() {
     printTestHeader("Complete Entry Flow (publish EntryButtonPressed)");
 
-    // Setup
+    // Setup system using mocks
     MockEventBus eventBus;
     MockGpioInput entryButton;
     MockGpioInput entryLightBarrier;
     MockGate entryGate;
     MockTicketService ticketService(5); // Capacity: 5
-
-    EntryGateController controller(eventBus, entryButton, entryGate, ticketService, 100);
+    ParkingGarageSystem system(eventBus, ticketService, entryGate, entryButton, entryLightBarrier);
+    console_test_init(&system);
+    auto& controller = system.getEntryGate();
 
     // Initial state
     assert(controller.getState() == EntryGateState::Idle);
@@ -62,8 +66,7 @@ void test_complete_entry_flow() {
 
     // Simulate: publish EntryButtonPressed
     printInfo("Command: publish EntryButtonPressed");
-    Event buttonEvent(EventType::EntryButtonPressed);
-    eventBus.publish(buttonEvent);
+    run_console_command("publish EntryButtonPressed");
     eventBus.processAllPending();
 
     // State: CheckingCapacity
@@ -89,8 +92,7 @@ void test_complete_entry_flow() {
 
     // Simulate: Car enters (light barrier blocked)
     printInfo("Car enters light barrier");
-    Event barrierBlocked(EventType::EntryLightBarrierBlocked);
-    eventBus.publish(barrierBlocked);
+    run_console_command("publish EntryLightBarrierBlocked");
     eventBus.processAllPending();
 
     // State: CarPassing
@@ -99,8 +101,7 @@ void test_complete_entry_flow() {
 
     // Simulate: Car clears barrier
     printInfo("Car clears light barrier");
-    Event barrierCleared(EventType::EntryLightBarrierCleared);
-    eventBus.publish(barrierCleared);
+    run_console_command("publish EntryLightBarrierCleared");
     eventBus.processAllPending();
 
     // State: WaitingBeforeClose
@@ -134,13 +135,14 @@ void test_complete_exit_flow_paid() {
     MockGate exitGate;
     MockGpioInput exitLightBarrier;
     MockTicketService ticketService(5);
-
-    // Create a paid ticket
-    uint32_t ticketId = ticketService.getNewTicket();
-    ticketService.payTicket(ticketId);
+    ParkingGarageSystem system(eventBus, ticketService, exitGate, /*entryButton*/exitLightBarrier /*placeholder*/, exitLightBarrier);
+    console_test_init(&system);
+    // Create a paid ticket via system service
+    uint32_t ticketId = system.getTicketService().getNewTicket();
+    run_console_command(std::string("ticket pay ") + std::to_string(ticketId));
     printInfo("Ticket #1 created and paid");
 
-    ExitGateController controller(eventBus, exitGate, ticketService, 100);
+    auto& controller = system.getExitGate();
 
     // Initial state
     assert(controller.getState() == ExitGateState::Idle);
@@ -148,8 +150,8 @@ void test_complete_exit_flow_paid() {
 
     // Simulate: ticket validate 1
     printInfo("Command: ticket validate 1");
-    bool validated = controller.validateTicketManually(ticketId);
-    assert(validated == true);
+    int rc = run_console_command(std::string("ticket validate ") + std::to_string(ticketId));
+    assert(rc == 0);
     eventBus.processAllPending();
 
     // State: ValidatingTicket
@@ -169,8 +171,7 @@ void test_complete_exit_flow_paid() {
 
     // Simulate: publish ExitLightBarrierBlocked
     printInfo("Command: publish ExitLightBarrierBlocked");
-    Event barrierBlocked(EventType::ExitLightBarrierBlocked);
-    eventBus.publish(barrierBlocked);
+    run_console_command("publish ExitLightBarrierBlocked");
     eventBus.processAllPending();
 
     // State: CarPassing
@@ -179,8 +180,7 @@ void test_complete_exit_flow_paid() {
 
     // Simulate: Car clears barrier
     printInfo("Car clears light barrier");
-    Event barrierCleared(EventType::ExitLightBarrierCleared);
-    eventBus.publish(barrierCleared);
+    run_console_command("publish ExitLightBarrierCleared");
     eventBus.processAllPending();
 
     // State: WaitingBeforeClose

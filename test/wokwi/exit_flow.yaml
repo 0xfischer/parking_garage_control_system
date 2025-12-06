@@ -1,0 +1,76 @@
+name: Complete Exit Flow (Paid Ticket)
+version: 1
+
+steps:
+  # Wait for system boot
+  - wait: 3000
+
+  # Wait for console ready
+  - serial-wait-for: "Console ready"
+    timeout: 10000
+
+  # === ENTRY PHASE ===
+  # Press entry button to get a ticket
+  - button-press: btn-entry
+    duration: 100
+
+  - serial-wait-for: "Ticket issued"
+    timeout: 5000
+
+  # Complete entry flow
+  - wait: 3000
+  - set-control:
+      part: light-entry
+      control: value
+      value: 1
+  - wait: 500
+  - set-control:
+      part: light-entry
+      control: value
+      value: 0
+
+  # Wait for entry to complete
+  - wait: 5000
+
+  # === PAYMENT PHASE ===
+  # Pay the ticket via console
+  - serial-type: "ticket pay 1\n"
+
+  - serial-wait-for: "paid successfully"
+    timeout: 3000
+
+  # === EXIT PHASE ===
+  # Validate ticket for exit
+  - serial-type: "ticket validate 1\n"
+
+  - serial-wait-for: "validated successfully"
+    timeout: 3000
+
+  # Verify barrier opening
+  - serial-wait-for: "OpeningBarrier"
+    timeout: 2000
+
+  # Wait for barrier to open
+  - wait: 2500
+
+  # Simulate car blocking exit light barrier
+  - set-control:
+      part: light-exit
+      control: value
+      value: 1
+
+  - serial-wait-for: "CarPassing"
+    timeout: 2000
+
+  # Simulate car clearing exit light barrier
+  - set-control:
+      part: light-exit
+      control: value
+      value: 0
+
+  # Wait for barrier to close
+  - serial-wait-for: "ClosingBarrier"
+    timeout: 5000
+
+  - serial-wait-for: "Idle"
+    timeout: 3000

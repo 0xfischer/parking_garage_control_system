@@ -16,9 +16,9 @@ Event-driven parking garage control system for ESP32 using ESP-IDF and FreeRTOS.
 
 Default GPIO assignment:
 - **GPIO 25**: Entry Button (with internal pull-up)
-- **GPIO 15**: Entry Light Barrier (with internal pull-up)
+- **GPIO 23**: Entry Light Barrier (with internal pull-up)
 - **GPIO 22**: Entry Barrier Servo (PWM via LEDC Channel 0)
-- **GPIO 23**: Exit Light Barrier (with internal pull-up)
+- **GPIO 4**: Exit Light Barrier (with internal pull-up)
 - **GPIO 2**: Exit Barrier Servo (PWM via LEDC Channel 1)
 
 ### Servo Motors
@@ -249,12 +249,37 @@ Available Commands:
   ticket list               - List all tickets
   ticket pay <id>           - Pay ticket
   ticket validate <id>      - Validate ticket for exit
-  publish <event>           - Publish an event (use 'list' to see all)
-  gpio read <gate> <dev>    - Read GPIO state
+  publish <event>           - Publish event (use 'list')
+  gpio                      - GPIO read/write (use for usage)
+  test <entry|exit|full|info>  - Hardware test guides
   ?                         - Show this help
   help                      - Show ESP-IDF help
   clear                     - Clear screen
   restart                   - Restart system
+```
+
+### GPIO Control
+
+The `gpio` command allows direct hardware access and simulation:
+
+```bash
+# Read GPIO states
+ParkingGarage> gpio read entry button    # Read entry button (GPIO 25)
+ParkingGarage> gpio read entry barrier   # Read entry light barrier (GPIO 23)
+ParkingGarage> gpio read exit barrier    # Read exit light barrier (GPIO 4)
+
+# Control barrier motors (direct hardware)
+ParkingGarage> gpio write entry motor open   # Open entry barrier (GPIO 22)
+ParkingGarage> gpio write entry motor close  # Close entry barrier
+ParkingGarage> gpio write exit motor open    # Open exit barrier (GPIO 2)
+ParkingGarage> gpio write exit motor close   # Close exit barrier
+
+# Simulate inputs (via events)
+ParkingGarage> gpio write entry button pressed     # Simulate button press
+ParkingGarage> gpio write entry barrier blocked    # Simulate car blocking entry
+ParkingGarage> gpio write entry barrier cleared    # Simulate car passing entry
+ParkingGarage> gpio write exit barrier blocked     # Simulate car blocking exit
+ParkingGarage> gpio write exit barrier cleared     # Simulate car passing exit
 ```
 
 ### Event Publishing
@@ -283,389 +308,61 @@ Publishing event: EntryButtonPressed
 
 ### Example Usage
 
-#### Vollständiger Entry/Exit Workflow über Console
+📖 **Detaillierte Console-Workflow Beispiele:** [examples/README.md](examples/README.md#-console-workflow-examples)
 
-Hier ist ein kompletter Durchlauf von Einfahrt bis Ausfahrt. **Wichtig**: Die Schranke öffnet nur bei bezahlten Tickets!
-
-**1. System Status prüfen**
+**Kurzbeispiel - Vollständiger Entry/Exit Flow:**
+```bash
+ParkingGarage> publish EntryButtonPressed     # Ticket #1 wird erstellt, Schranke öffnet
+ParkingGarage> ticket pay 1                   # Ticket bezahlen
+ParkingGarage> ticket validate 1              # Ticket validieren, Ausfahrt-Schranke öffnet
+ParkingGarage> publish ExitLightBarrierBlocked  # Auto fährt aus
 ```
-parking> status
-=== Parking System Status ===
-Capacity: 0/5 (5 free)
-Entry Gate: Idle
-Exit Gate: Idle
-Active Tickets: 0
-```
-
-**2. Einfahrt simulieren**
-```
-ParkingGarage> publish EntryButtonPressed
-Publishing event: EntryButtonPressed
-I (1234) EntryGateController: Ticket issued: ID=1
-I (1235) EntryGateController: State: Idle -> OpeningBarrier
-```
-Die State Machine durchläuft automatisch:
-Idle → CheckingCapacity → IssuingTicket → OpeningBarrier → WaitingForCar → CarPassing → WaitingBeforeClose (2 Sek) → ClosingBarrier → Idle
-
-**3. Ticket anzeigen lassen**
-```
-ParkingGarage> ticket list
-=== Ticket System ===
-Active Tickets: 1
-Capacity: 5
-Available Spaces: 4
-
-Active Tickets:
-  Ticket #1: UNPAID (Entry: 2025-12-04 14:23:15)
-```
-
-**4. Ticket validieren OHNE Bezahlung**
-```
-ParkingGarage> ticket validate 1
-I (5678) ExitGateController: Starting manual ticket validation for ID=1
-W (5679) ExitGateController: Ticket not paid: ID=1 - use 'ticket pay 1' command first!
-Error: Failed to validate ticket #1
-```
-❌ **Validierung fehlgeschlagen!** Das Ticket muss zuerst bezahlt werden.
-
-**5. Ticket bezahlen**
-```
-ParkingGarage> ticket pay 1
-Ticket #1 paid successfully
-
-ParkingGarage> ticket list
-=== Ticket System ===
-Active Tickets: 1
-
-Active Tickets:
-  Ticket #1: PAID (Entry: 2025-12-04 14:23:15, Paid: 2025-12-04 14:25:32)
-```
-
-**6. Ticket validieren MIT Bezahlung**
-```
-ParkingGarage> ticket validate 1
-I (7890) ExitGateController: Starting manual ticket validation for ID=1
-I (7891) ExitGateController: Ticket validation successful: ID=1
-I (7892) ExitGateController: State: ValidatingTicket -> OpeningBarrier
-Ticket #1 validated successfully
-```
-✅ **Schranke öffnet!** Die State Machine durchläuft: Idle → ValidatingTicket → OpeningBarrier → WaitingForCarToPass
-
-**7. Ausfahrt simulieren (Auto fährt durch)**
-```
-ParkingGarage> publish ExitLightBarrierBlocked
-Publishing event: ExitLightBarrierBlocked
-I (8000) ExitGateController: Car entering exit barrier
-I (8100) ExitGateController: Car exited parking, waiting 2 seconds before closing barrier
-I (10100) ExitGateController: Wait period finished, closing barrier
-```
-Die Light Barrier Events triggern: WaitingForCarToPass → CarPassing → WaitingBeforeClose (2 Sek) → ClosingBarrier → Idle
-
-**8. Status nach Ausfahrt**
-```
-ParkingGarage> status
-=== Parking System Status ===
-Capacity: 0/5 (5 free)
-Entry Gate: Idle
-Exit Gate: Idle
-Active Tickets: 0
-```
-
-#### Mehrere Fahrzeuge hintereinander
-
-```
-ParkingGarage> publish EntryButtonPressed    # Ticket #1 erstellt
-ParkingGarage> publish EntryButtonPressed    # Ticket #2 erstellt
-ParkingGarage> publish EntryButtonPressed    # Ticket #3 erstellt
-
-ParkingGarage> ticket list
-Active Tickets: 3
-  Ticket #1: UNPAID
-  Ticket #2: UNPAID
-  Ticket #3: UNPAID
-
-# Alle Tickets bezahlen
-ParkingGarage> ticket pay 1
-ParkingGarage> ticket pay 2
-ParkingGarage> ticket pay 3
-
-# Fahrzeuge fahren nacheinander raus
-ParkingGarage> ticket validate 1
-ParkingGarage> publish ExitLightBarrierBlocked
-
-ParkingGarage> ticket validate 2
-ParkingGarage> publish ExitLightBarrierBlocked
-
-ParkingGarage> ticket validate 3
-ParkingGarage> publish ExitLightBarrierBlocked
-```
-
-#### Parkhaus voll
-
-```
-ParkingGarage> status
-Capacity: 5/5 (0 free)
-
-ParkingGarage> publish EntryButtonPressed
-W (9999) EntryGateController: Parking full! (5/5)
-```
-❌ **Einfahrt verweigert!** Das System geht direkt von CheckingCapacity zurück zu Idle.
 
 ## Testing
 
-### Unit Tests
+📖 **Vollständige Test-Dokumentation:** [test/README.md](test/README.md)
 
-The project uses **dependency injection** with a **dual-constructor pattern** for testability:
+### Kurzübersicht
 
-**Production Constructor** (creates own hardware):
-```cpp
-EntryGateController entryGate(
-    eventBus,
-    ticketService,
-    EntryGateConfig{
-        .buttonPin = GPIO_NUM_25,
-        .buttonDebounceMs = 50,
-        .lightBarrierPin = GPIO_NUM_15,
-        .motorPin = GPIO_NUM_22,
-        .ledcChannel = LEDC_CHANNEL_0,
-        .barrierTimeoutMs = 2000
-    }
-);
-```
+| Typ | Ort | Läuft auf | Zweck |
+|-----|-----|-----------|-------|
+| **Unit Tests (Mocks)** | `test/*.cpp` | Host (PC) | Schnelle Logik-Tests |
+| **Wokwi Simulation** | `test/wokwi/*.yaml` | Wokwi CI | Hardware-Simulation |
+| **Unity HW Tests** | `components/parking_system/test/` | ESP32 | Echte Hardware |
 
-**Test Constructor** (accepts mocks):
-```cpp
-EntryGateController controller(
-    mockEventBus,
-    mockButton,
-    mockGate,
-    mockTicketService,
-    2000  // timeout
-);
-```
-
-### Mock Implementations
-
-Mock implementations are provided for testing:
-- `MockGate`: Simulate gate barrier operations
-- `MockGpioInput`: Simulate GPIO inputs and interrupts
-- `MockEventBus`: Synchronous event processing
-- `MockTicketService`: Controllable ticket logic
-
-### Running Tests
-
-Build and run unit tests on your development machine (no ESP32 needed):
+### Schnellstart
 
 ```bash
-# Build entry gate tests
-g++ -std=c++20 -DUNIT_TEST \
-  -I components/parking_system/include \
-  -I components/parking_system/include/events \
-  -I components/parking_system/include/gates \
-  -I components/parking_system/include/hal \
-  -I components/parking_system/include/tickets \
-  -I test/stubs -I test/mocks \
-  -o test/bin_test_entry_gate \
-  test/test_entry_gate.cpp \
-  components/parking_system/src/gates/EntryGateController.cpp \
-  components/parking_system/src/tickets/TicketService.cpp \
-  components/parking_system/src/events/FreeRtosEventBus.cpp \
-  components/parking_system/src/gates/Gate.cpp
-
-# Run tests
+# Unit Tests bauen und ausführen (< 1 Sekunde)
 ./test/bin_test_entry_gate
 ./test/bin_test_exit_gate
+
+# Wokwi Simulation
+idf.py build && wokwi-cli --scenario test/wokwi/entry_flow.yaml
+
+# Hardware Tests
+idf.py -T parking_system build && idf.py flash monitor
 ```
 
-**Test Results:**
-- ✅ **8/8 tests passing** (4 entry gate + 4 exit gate)
-- ✅ **< 1 second** execution time
-- ✅ **No hardware required**
-
-### Example Test Structure
-
-```cpp
-#include "MockGate.h"
-#include "MockGpioInput.h"
-#include "MockEventBus.h"
-#include "MockTicketService.h"
-#include "EntryGateController.h"
-
-void test_entry_full_cycle() {
-    // Setup mocks
-    MockEventBus eventBus;
-    MockGpioInput button;
-    MockGate gate;
-    MockTicketService tickets(5);
-
-    // Create controller with test constructor
-    EntryGateController controller(
-        eventBus, button, gate, tickets, 100
-    );
-
-    // Simulate button press
-    Event event(EventType::EntryButtonPressed);
-    eventBus.publish(event);
-    eventBus.processAllPending();
-
-    // Verify state and gate
-    assert(controller.getState() == EntryGateState::OpeningBarrier);
-    assert(gate.isOpen() == true);
-}
-```
 ## State Machine Examples
 
-This project includes two complete state machine implementations demonstrating different architectural approaches:
+📖 **Vollständige Beispiel-Dokumentation:** [examples/README.md](examples/README.md)
 
-### 1. HAL State Machine - Interface-Based Approach
+Dieses Projekt enthält zwei State Machine Implementierungen:
 
-**Pattern:** Hardware Abstraction Layer with Dependency Injection
-
-Simple and direct approach where the state machine depends on hardware interfaces. Perfect for straightforward systems with 1:1 state-to-hardware mappings.
-
-**Key Features:**
-- ✅ Interface-based hardware abstraction
-- ✅ Dependency injection for testability
-- ✅ Clear, direct control flow
-- ✅ Easy to understand and maintain
-
-**Structure:**
-```
-examples/hal_state_machine/
-├── hal_state_machine.h/cpp      # State machine implementation
-├── esp32_gpio.h/cpp             # Hardware implementation
-├── main.cpp                      # Example usage
-├── hal_state_machine_test.cpp   # Unit tests (5 tests, all passing)
-└── README.md                     # Detailed documentation
-```
+| Pattern | Beschreibung | Best for |
+|---------|--------------|----------|
+| **HAL State Machine** | Interface-basiert, Dependency Injection | Einfache Systeme |
+| **Event-Driven** | Publisher-Subscriber, Zero Hardware Dependencies | Komplexe Systeme |
 
 **Quick Start:**
 ```bash
-cd examples/hal_state_machine
-g++ -std=c++20 hal_state_machine.cpp esp32_gpio.cpp main.cpp -o hal_example
-./hal_example
+# HAL State Machine
+cd examples/hal_state_machine && g++ -std=c++20 *.cpp -o hal_example && ./hal_example
 
-# Run tests
-g++ -std=c++20 hal_state_machine.cpp hal_state_machine_test.cpp -o hal_test
-./hal_test
+# Event-Driven State Machine
+cd examples/event_driven_state_machine && g++ -std=c++20 *.cpp -o event_example && ./event_example
 ```
-
-[📖 View HAL State Machine Documentation](examples/hal_state_machine/README.md)
-
----
-
-### 2. Event-Driven State Machine - Publisher-Subscriber Pattern
-
-**Pattern:** Fully Event-Driven with Zero Hardware Dependencies
-
-**DER GRÖßTE VORTEIL: VOLLSTÄNDIGE TESTBARKEIT OHNE HARDWARE!**
-
-Modern C++20 implementation with complete decoupling. The state machine emits events to multiple subscribers without knowing who receives them.
-
-**Key Features:**
-- ✅ **ZERO hardware dependencies** in state machine
-- ✅ **Enum-based event types** (typsicher, keine Strings!)
-- ✅ **Generic payloads** with `std::any`
-- ✅ **Multiple subscribers** (Motor, Logger, Telemetry, etc.)
-- ✅ **100% testable on PC** (no ESP32 needed!)
-- ✅ **CI/CD friendly** (standard gcc, runs anywhere)
-
-**Structure:**
-```
-examples/event_driven_state_machine/
-├── event_driven_state_machine.h/cpp     # State machine (NO hardware deps!)
-├── motor_controller.h/cpp               # Example subscribers
-├── main.cpp                              # Example usage
-├── event_driven_state_machine_test.cpp  # Unit tests (7 tests, all passing)
-└── README.md                             # Detailed documentation
-```
-
-**Quick Start:**
-```bash
-cd examples/event_driven_state_machine
-g++ -std=c++20 event_driven_state_machine.cpp motor_controller.cpp main.cpp -o event_example
-./event_example
-
-# Run tests (< 1 second!)
-g++ -std=c++20 event_driven_state_machine.cpp event_driven_state_machine_test.cpp -o event_test
-./event_test
-```
-
-**Example Test:**
-```cpp
-// Setup: State Machine + Mock Motor (NO real hardware!)
-EventDrivenStateMachine sm;
-MockMotorController motor;
-
-sm.subscribe([&motor](const OutputEvent& event) {
-    motor.handleEvent(event);
-});
-
-// Test: Start motor
-sm.processEvent(InputEvent{InputEventType::Start});
-
-// Assertions: Check state and mock state
-assert(sm.getCurrentState() == State::MotorRunning);
-assert(motor.isMotorRunning() == true);
-assert(motor.getCurrentSpeed() == 100);
-```
-
-[📖 View Event-Driven State Machine Documentation](examples/event_driven_state_machine/README.md)
-
----
-
-### Comparison: When to Use Which?
-
-| Feature | HAL State Machine | Event-Driven State Machine |
-|---------|------------------|----------------------------|
-| **Complexity** | Low ⭐ | Medium ⭐⭐ |
-| **Hardware Coupling** | Medium (Interfaces) | None (Events) |
-| **Testability** | Good ✓ | Excellent ✓✓ |
-| **Test Speed** | Fast (~ms) | Very Fast (<1ms) |
-| **Multiple Outputs** | Manual | Built-in |
-| **CI/CD Friendly** | Good | Excellent |
-| **Best for** | Simple systems | Complex systems |
-
-**Use HAL when:**
-- 🎯 Simple system with few components
-- 🎯 Direct 1:1 state-to-hardware mapping
-- 🎯 Team prefers straightforward code
-
-**Use Event-Driven when:**
-- 🎯 **Complex system** (like this parking garage!)
-- 🎯 **Multiple subscribers** needed (logging, monitoring, telemetry)
-- 🎯 **Testability is critical** (automotive, medical, industrial)
-- 🎯 **CI/CD without hardware** required
-
-[📚 View Complete Examples Overview](examples/README.md)
-
----
-
-### Real-World Impact: Testing Without Hardware
-
-**Traditional Embedded Testing:**
-```
-❌ Flash code to ESP32 (30+ seconds)
-❌ Run test on hardware
-❌ Debug via serial monitor
-❌ Repeat for each test
-⏱️ Total: 10+ minutes per test cycle
-```
-
-**Event-Driven Testing:**
-```
-✅ Compile on PC (< 1 second)
-✅ Run all tests (< 1 second)
-✅ Full GDB debugger support
-✅ Unlimited parallel tests
-⏱️ Total: < 1 second for full test suite
-```
-
-**This means:**
-- 👥 All developers can test simultaneously (no hardware bottleneck)
-- 🚀 200+ test iterations per day instead of ~20
-- 💰 No ESP32 boards needed for each developer
-- ✅ CI/CD runs on standard GitHub Actions/GitLab CI
 
 ## Project Structure
 

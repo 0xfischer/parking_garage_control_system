@@ -365,3 +365,137 @@ Both patterns have their place in embedded development:
 ---
 
 *💡 Pro Tip: Start with HAL for your first implementation. If you find yourself needing multiple outputs for the same state transition, or struggling with hardware-dependent tests, migrate to Event-Driven!*
+
+---
+
+## 🎮 Console Workflow Examples
+
+The following examples demonstrate how to use the parking garage system via the ESP console.
+
+### Vollständiger Entry/Exit Workflow
+
+Hier ist ein kompletter Durchlauf von Einfahrt bis Ausfahrt. **Wichtig**: Die Schranke öffnet nur bei bezahlten Tickets!
+
+#### 1. System Status prüfen
+```
+parking> status
+=== Parking System Status ===
+Capacity: 0/5 (5 free)
+Entry Gate: Idle
+Exit Gate: Idle
+Active Tickets: 0
+```
+
+#### 2. Einfahrt simulieren
+```
+ParkingGarage> publish EntryButtonPressed
+Publishing event: EntryButtonPressed
+I (1234) EntryGateController: Ticket issued: ID=1
+I (1235) EntryGateController: State: Idle -> OpeningBarrier
+```
+Die State Machine durchläuft automatisch:
+Idle → CheckingCapacity → IssuingTicket → OpeningBarrier → WaitingForCar → CarPassing → WaitingBeforeClose (2 Sek) → ClosingBarrier → Idle
+
+#### 3. Ticket anzeigen lassen
+```
+ParkingGarage> ticket list
+=== Ticket System ===
+Active Tickets: 1
+Capacity: 5
+Available Spaces: 4
+
+Active Tickets:
+  Ticket #1: UNPAID (Entry: 2025-12-04 14:23:15)
+```
+
+#### 4. Ticket validieren OHNE Bezahlung
+```
+ParkingGarage> ticket validate 1
+I (5678) ExitGateController: Starting manual ticket validation for ID=1
+W (5679) ExitGateController: Ticket not paid: ID=1 - use 'ticket pay 1' command first!
+Error: Failed to validate ticket #1
+```
+❌ **Validierung fehlgeschlagen!** Das Ticket muss zuerst bezahlt werden.
+
+#### 5. Ticket bezahlen
+```
+ParkingGarage> ticket pay 1
+Ticket #1 paid successfully
+
+ParkingGarage> ticket list
+=== Ticket System ===
+Active Tickets: 1
+
+Active Tickets:
+  Ticket #1: PAID (Entry: 2025-12-04 14:23:15, Paid: 2025-12-04 14:25:32)
+```
+
+#### 6. Ticket validieren MIT Bezahlung
+```
+ParkingGarage> ticket validate 1
+I (7890) ExitGateController: Starting manual ticket validation for ID=1
+I (7891) ExitGateController: Ticket validation successful: ID=1
+I (7892) ExitGateController: State: ValidatingTicket -> OpeningBarrier
+Ticket #1 validated successfully
+```
+✅ **Schranke öffnet!** Die State Machine durchläuft: Idle → ValidatingTicket → OpeningBarrier → WaitingForCarToPass
+
+#### 7. Ausfahrt simulieren (Auto fährt durch)
+```
+ParkingGarage> publish ExitLightBarrierBlocked
+Publishing event: ExitLightBarrierBlocked
+I (8000) ExitGateController: Car entering exit barrier
+I (8100) ExitGateController: Car exited parking, waiting 2 seconds before closing barrier
+I (10100) ExitGateController: Wait period finished, closing barrier
+```
+Die Light Barrier Events triggern: WaitingForCarToPass → CarPassing → WaitingBeforeClose (2 Sek) → ClosingBarrier → Idle
+
+#### 8. Status nach Ausfahrt
+```
+ParkingGarage> status
+=== Parking System Status ===
+Capacity: 0/5 (5 free)
+Entry Gate: Idle
+Exit Gate: Idle
+Active Tickets: 0
+```
+
+### Mehrere Fahrzeuge hintereinander
+
+```
+ParkingGarage> publish EntryButtonPressed    # Ticket #1 erstellt
+ParkingGarage> publish EntryButtonPressed    # Ticket #2 erstellt
+ParkingGarage> publish EntryButtonPressed    # Ticket #3 erstellt
+
+ParkingGarage> ticket list
+Active Tickets: 3
+  Ticket #1: UNPAID
+  Ticket #2: UNPAID
+  Ticket #3: UNPAID
+
+# Alle Tickets bezahlen
+ParkingGarage> ticket pay 1
+ParkingGarage> ticket pay 2
+ParkingGarage> ticket pay 3
+
+# Fahrzeuge fahren nacheinander raus
+ParkingGarage> ticket validate 1
+ParkingGarage> publish ExitLightBarrierBlocked
+
+ParkingGarage> ticket validate 2
+ParkingGarage> publish ExitLightBarrierBlocked
+
+ParkingGarage> ticket validate 3
+ParkingGarage> publish ExitLightBarrierBlocked
+```
+
+### Parkhaus voll
+
+```
+ParkingGarage> status
+Capacity: 5/5 (0 free)
+
+ParkingGarage> publish EntryButtonPressed
+W (9999) EntryGateController: Parking full! (5/5)
+```
+❌ **Einfahrt verweigert!** Das System geht direkt von CheckingCapacity zurück zu Idle.

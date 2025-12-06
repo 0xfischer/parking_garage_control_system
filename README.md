@@ -338,7 +338,14 @@ ParkingGarage> publish ExitLightBarrierBlocked  # Auto fährt aus
 ./test/bin_test_exit_gate
 
 # Wokwi Simulation
-idf.py build && wokwi-cli --scenario test/wokwi/entry_flow.yaml
+```bash
+# Run all Wokwi CLI tests
+idf.py build 
+export WOKWI_CLI_TOKEN=wok_xxx
+wokwi-cli --scenario test/wokwi/console_full.yaml
+wokwi-cli --scenario test/wokwi/entry_exit_flow.yaml
+wokwi-cli --scenario test/wokwi/full_capacity.yaml
+```
 
 # Hardware Tests
 idf.py -T parking_system build && idf.py flash monitor
@@ -420,14 +427,6 @@ parking_garage_control_system/
 - [test_exit_gate.cpp](test/test_exit_gate.cpp) - Exit gate tests using mocks
 - [MockGate.h](test/mocks/MockGate.h) - Gate mock for testing
 
-## C++20 Features Used
-
-- `std::variant` for event payloads
-- `std::function` for callbacks
-- `std::unique_ptr` for RAII
-- `[[nodiscard]]` attribute
-- Designated initializers
-- `constexpr` where applicable
 
 ## License
 

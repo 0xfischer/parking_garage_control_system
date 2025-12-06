@@ -5,7 +5,6 @@ ARG CONTAINER_USER=develop
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-
 # Install additional tools
 RUN apt-get update && apt-get install -y -q \
     git \
@@ -35,8 +34,13 @@ RUN if ! getent group $USER_GID; then groupadd --gid $USER_GID $CONTAINER_USER; 
     && echo $CONTAINER_USER ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$CONTAINER_USER \
     && chmod 0440 /etc/sudoers.d/$CONTAINER_USER
   
-  USER ${CONTAINER_USER}
-  ENV USER=${CONTAINER_USER}
+USER ${CONTAINER_USER}
+ENV USER=${CONTAINER_USER}
+ENV HOME=/home/${CONTAINER_USER}
+ENV PATH="$HOME/.local/bin:$PATH"
+
+# Install wokwi-cli
+RUN wget -qO- https://wokwi.com/ci/install.sh | sh
 
 # Set up working directory
 WORKDIR /workspace

@@ -2,75 +2,143 @@ name: Parking Full Rejection
 version: 1
 
 steps:
-  # Wait for system boot
-  - wait: 3000
-
-  - serial-wait-for: "Console ready"
-    timeout: 10000
+  - wait-serial: "Console ready"
 
   # Fill parking with 5 cars (default capacity)
   # Car 1
-  - button-press: btn-entry
-    duration: 100
-  - serial-wait-for: "Ticket issued"
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 0
+  - delay: 100ms
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 1
+  - wait-serial: "Ticket issued"
     timeout: 5000
-  - wait: 500
-  - set-control: { part: light-entry, control: value, value: 1 }
-  - wait: 500
-  - set-control: { part: light-entry, control: value, value: 0 }
-  - wait: 5000
+  - delay: 500ms
+  - set-control:
+      part-id: light-entry
+      control: value
+      value: 1
+  - delay: 500ms
+  - set-control:
+      part-id: light-entry
+      control: value
+      value: 0
+  - delay: 5000ms
 
   # Car 2
-  - button-press: btn-entry
-    duration: 100
-  - serial-wait-for: "Ticket issued"
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 0
+  - delay: 100ms
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 1
+  - wait-serial: "Ticket issued"
     timeout: 5000
-  - wait: 500
-  - set-control: { part: light-entry, control: value, value: 1 }
-  - wait: 500
-  - set-control: { part: light-entry, control: value, value: 0 }
-  - wait: 5000
+  - delay: 500ms
+  - set-control:
+      part-id: light-entry
+      control: value
+      value: 1
+  - delay: 500ms
+  - set-control:
+      part-id: light-entry
+      control: value
+      value: 0
+  - delay: 5000ms
 
   # Car 3
-  - button-press: btn-entry
-    duration: 100
-  - serial-wait-for: "Ticket issued"
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 0
+  - delay: 100ms
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 1
+  - wait-serial: "Ticket issued"
     timeout: 5000
-  - wait: 500
-  - set-control: { part: light-entry, control: value, value: 1 }
-  - wait: 500
-  - set-control: { part: light-entry, control: value, value: 0 }
-  - wait: 5000
+  - delay: 500ms
+  - set-control:
+      part-id: light-entry
+      control: value
+      value: 1
+  - delay: 500ms
+  - set-control:
+      part-id: light-entry
+      control: value
+      value: 0
+  - delay: 5000ms
 
   # Car 4
-  - button-press: btn-entry
-    duration: 100
-  - serial-wait-for: "Ticket issued"
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 0
+  - delay: 100ms
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 1
+  - wait-serial: "Ticket issued"
     timeout: 5000
-  - wait: 500
-  - set-control: { part: light-entry, control: value, value: 1 }
-  - wait: 500
-  - set-control: { part: light-entry, control: value, value: 0 }
-  - wait: 5000
+  - delay: 500ms
+  - set-control:
+      part-id: light-entry
+      control: value
+      value: 1
+  - delay: 500ms
+  - set-control:
+      part-id: light-entry
+      control: value
+      value: 0
+  - delay: 5000ms
 
   # Car 5 (last spot)
-  - button-press: btn-entry
-    duration: 100
-  - serial-wait-for: "Ticket issued"
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 0
+  - delay: 100ms
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 1
+  - wait-serial: "Ticket issued"
     timeout: 5000
-  - wait: 500
-  - set-control: { part: light-entry, control: value, value: 1 }
-  - wait: 500
-  - set-control: { part: light-entry, control: value, value: 0 }
-  - wait: 5000
+  - delay: 500ms
+  - set-control:
+      part-id: light-entry
+      control: value
+      value: 1
+  - delay: 500ms
+  - set-control:
+      part-id: light-entry
+      control: value
+      value: 0
+  - delay: 5000ms
 
   # Car 6 - should be rejected
-  - button-press: btn-entry
-    duration: 100
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 0
+  - delay: 100ms
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 1
 
-  - serial-wait-for: "Parking full"
+  - wait-serial: "Parking full"
     timeout: 5000
 
   # Verify we return to Idle without issuing ticket
-  - serial-wait-for: "Idle"
+  - wait-serial: "Idle"
     timeout: 3000

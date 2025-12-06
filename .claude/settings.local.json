@@ -30,7 +30,9 @@
       "Bash(components/parking_system/src/hal/EspServoOutput.cpp)",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(./test/bin_test_console_workflow)"
+      "Bash(./test/bin_test_console_workflow)",
+      "Bash(test/test_entry_gate.cpp )",
+      "Bash(test/test_exit_gate.cpp )"
     ],
     "deny": [],
     "ask": []

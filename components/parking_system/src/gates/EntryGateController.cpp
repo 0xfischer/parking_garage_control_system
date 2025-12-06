@@ -4,47 +4,6 @@
 static const char* TAG = "EntryGateController";
 static const char *entryGateStateToString(EntryGateState state);
 
-#ifndef UNIT_TEST
-// Production constructor - creates own Gate
-EntryGateController::EntryGateController(IEventBus &eventBus,
-                                         ITicketService &ticketService,
-                                         const EntryGateConfig &config)
-    : m_eventBus(eventBus), m_ticketService(ticketService), m_state(EntryGateState::Idle),
-      m_barrierTimeoutMs(config.barrierTimeoutMs), m_currentTicketId(0), m_barrierTimer(nullptr)
-{
-    // Create owned gate hardware
-    m_ownedGate = std::make_unique<Gate>(
-        config.buttonPin,
-        config.buttonDebounceMs,
-        config.lightBarrierPin,
-        config.motorPin,
-        config.ledcChannel
-    );
-    m_button = &m_ownedGate->getButton();
-    m_gate = m_ownedGate.get();
-
-    // Subscribe to events
-    m_eventBus.subscribe(EventType::EntryButtonPressed,
-        [this](const Event& e) { onButtonPressed(e); });
-    m_eventBus.subscribe(EventType::EntryLightBarrierBlocked,
-        [this](const Event& e) { onLightBarrierBlocked(e); });
-    m_eventBus.subscribe(EventType::EntryLightBarrierCleared,
-        [this](const Event& e) { onLightBarrierCleared(e); });
-
-    // Create barrier timer
-    m_barrierTimer = xTimerCreate(
-        "EntryBarrierTimer",
-        pdMS_TO_TICKS(m_barrierTimeoutMs),
-        pdFALSE,
-        this,
-        barrierTimerCallback
-    );
-
-    ESP_LOGI(TAG, "EntryGateController initialized (production mode)");
-}
-#endif // UNIT_TEST
-
-// Test constructor - uses injected dependencies
 EntryGateController::EntryGateController(
     IEventBus& eventBus,
     IGpioInput& button,
@@ -78,7 +37,7 @@ EntryGateController::EntryGateController(
         barrierTimerCallback
     );
 
-    ESP_LOGI(TAG, "EntryGateController initialized (test mode)");
+    ESP_LOGI(TAG, "EntryGateController initialized");
 }
 
 EntryGateController::~EntryGateController() {
@@ -88,11 +47,6 @@ EntryGateController::~EntryGateController() {
 }
 
 void EntryGateController::setupGpioInterrupts() {
-    // Only setup interrupts if we own the gate (production mode)
-    if (!m_ownedGate) {
-        return;
-    }
-
     // Setup entry button interrupt
     m_button->setInterruptHandler([this](bool level) {
         // Button pressed when level goes LOW (pull-up resistor)
@@ -101,15 +55,6 @@ void EntryGateController::setupGpioInterrupts() {
         m_eventBus.publish(event);
     });
     m_button->enableInterrupt();
-
-    // Setup entry light barrier interrupt
-    m_ownedGate->getLightBarrier().setInterruptHandler([this](bool level) {
-        // Barrier blocked when level goes LOW
-        EventType eventType = level ? EventType::EntryLightBarrierCleared : EventType::EntryLightBarrierBlocked;
-        Event event(eventType);
-        m_eventBus.publish(event);
-    });
-    m_ownedGate->getLightBarrier().enableInterrupt();
 
     ESP_LOGI(TAG, "Entry gate GPIO interrupts configured");
 }

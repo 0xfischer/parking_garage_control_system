@@ -59,6 +59,17 @@ extern "C" void app_main(void) {
 
     // Initialize NVS
     init_nvs();
+    // Set logging level for all tags to INFO
+    esp_log_level_set("*", ESP_LOG_INFO);
+    // Set logging level for each module
+    esp_log_level_set("Main", ESP_LOG_INFO);
+    esp_log_level_set("ParkingGarageSystem", ESP_LOG_INFO);
+    esp_log_level_set("ParkingGarageConfig", ESP_LOG_INFO);
+    esp_log_level_set("EntryGateController", ESP_LOG_INFO);
+    esp_log_level_set("ExitGateController", ESP_LOG_INFO);
+    esp_log_level_set("console_commands", ESP_LOG_INFO);
+    esp_log_level_set("EventBus", ESP_LOG_INFO);
+
 
     // Get configuration from Kconfig
     ParkingGarageConfig config = ParkingGarageConfig::fromKconfig();

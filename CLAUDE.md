@@ -51,8 +51,7 @@ g++ -std=c++20 -DUNIT_TEST \
   test/test_entry_gate.cpp \
   components/parking_system/src/gates/EntryGateController.cpp \
   components/parking_system/src/tickets/TicketService.cpp \
-  components/parking_system/src/events/FreeRtosEventBus.cpp \
-  components/parking_system/src/gates/Gate.cpp
+  components/parking_system/src/events/FreeRtosEventBus.cpp
 
 # Build exit gate tests
 g++ -std=c++20 -DUNIT_TEST \
@@ -66,8 +65,7 @@ g++ -std=c++20 -DUNIT_TEST \
   test/test_exit_gate.cpp \
   components/parking_system/src/gates/ExitGateController.cpp \
   components/parking_system/src/tickets/TicketService.cpp \
-  components/parking_system/src/events/FreeRtosEventBus.cpp \
-  components/parking_system/src/gates/Gate.cpp
+  components/parking_system/src/events/FreeRtosEventBus.cpp
 
 # Run tests
 ./test/bin_test_entry_gate
@@ -196,27 +194,34 @@ parking_garage_control_system/
 └── .github/workflows/              # CI/CD pipelines
 ```
 
-### Dual-Constructor Pattern
-Controllers have two constructors for testability:
+### Pure Dependency Injection
+All dependencies are injected via constructor - no factory constructors:
 
-**Production** - creates own hardware from config:
 ```cpp
-EntryGateController(IEventBus&, ITicketService&, EntryGateConfig config);
-ExitGateController(IEventBus&, ITicketService&, ExitGateConfig config);
-```
+// Entry gate controller - all dependencies injected
+EntryGateController(
+    IEventBus& eventBus,
+    IGpioInput& button,
+    IGate& gate,
+    ITicketService& ticketService,
+    uint32_t barrierTimeoutMs = 2000
+);
 
-**Test** - accepts mock dependencies:
-```cpp
-EntryGateController(IEventBus&, IGpioInput& button, IGate&, ITicketService&, uint32_t timeout);
-ExitGateController(IEventBus&, IGate&, ITicketService&, uint32_t barrierTimeout, uint32_t validationTime);
+// Exit gate controller - all dependencies injected
+ExitGateController(
+    IEventBus& eventBus,
+    IGate& gate,
+    ITicketService& ticketService,
+    uint32_t barrierTimeoutMs = 2000,
+    uint32_t validationTimeMs = 500
+);
 ```
 
 ### Ownership Hierarchy
-- `ParkingGarageSystem` creates and owns EventBus, TicketService, and gate controllers
-- `EntryGateController`/`ExitGateController` own their `Gate` instances (via `m_ownedGate`)
+- `ParkingGarageSystem` creates and owns EventBus, TicketService, Gate hardware, and controllers
 - `Gate` creates and owns hardware (Button, LightBarrier, Motor GPIO/Servo)
-- Controllers receive references to shared EventBus and TicketService
-- Controllers expose `getGate()` returning `Gate&` for console command access
+- Controllers receive references to all dependencies (no ownership)
+- `ParkingGarageSystem` exposes `getEntryGateHardware()`/`getExitGateHardware()` for console commands
 
 ### Event-Driven State Machines
 

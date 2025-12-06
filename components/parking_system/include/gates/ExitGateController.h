@@ -3,11 +3,8 @@
 #include "IEventBus.h"
 #include "IGate.h"
 #include "ITicketService.h"
-#include "Gate.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
-#include "driver/gpio.h"
-#include "driver/ledc.h"
 #include <memory>
 
 /**
@@ -24,17 +21,6 @@ enum class ExitGateState {
 };
 
 /**
- * @brief Configuration for ExitGateController in production mode
- */
-struct ExitGateConfig {
-    gpio_num_t lightBarrierPin;
-    gpio_num_t motorPin;
-    ledc_channel_t ledcChannel;
-    uint32_t barrierTimeoutMs;
-    uint32_t validationTimeMs;
-};
-
-/**
  * @brief Exit gate controller with state machine
  *
  * Handles exit sequence:
@@ -43,25 +29,13 @@ struct ExitGateConfig {
  * 3. Open barrier via IGate interface
  * 4. Wait for car to pass through
  * 5. Close barrier via IGate interface
+ *
+ * Uses pure Dependency Injection - all dependencies are injected via constructor.
  */
 class ExitGateController {
 public:
     /**
-     * @brief Construct exit gate controller (production mode)
-     * Creates own Gate hardware internally
-     * @param eventBus Event bus for publishing/subscribing
-     * @param ticketService Ticket service
-     * @param config Configuration with GPIO pins and timings
-     */
-    ExitGateController(
-        IEventBus& eventBus,
-        ITicketService& ticketService,
-        const ExitGateConfig& config
-    );
-
-    /**
-     * @brief Construct exit gate controller (test mode)
-     * Uses injected dependencies for testing
+     * @brief Construct exit gate controller with injected dependencies
      * @param eventBus Event bus for publishing/subscribing
      * @param gate Gate abstraction (barrier + light barrier)
      * @param ticketService Ticket service
@@ -77,12 +51,6 @@ public:
     );
 
     ~ExitGateController();
-
-    /**
-     * @brief Setup GPIO interrupts (only for production mode)
-     * Must be called after construction in production mode
-     */
-    void setupGpioInterrupts();
 
     // Prevent copying
     ExitGateController(const ExitGateController&) = delete;
@@ -100,9 +68,8 @@ public:
 
     /**
      * @brief Get gate reference (for debugging/console commands)
-     * @note Returns concrete Gate& for access to light barrier
      */
-    [[nodiscard]] Gate& getGate() { return *m_ownedGate; }
+    [[nodiscard]] IGate& getGate() { return *m_gate; }
 
     /**
      * @brief Manually validate ticket (for console commands)
@@ -110,6 +77,12 @@ public:
      * @return true if validation successful
      */
     bool validateTicketManually(uint32_t ticketId);
+
+    /**
+     * @brief Setup GPIO interrupts
+     * Call this after construction to enable hardware interrupts
+     */
+    void setupGpioInterrupts();
 
 #ifdef UNIT_TEST
     // Test helpers to simulate timer expirations without FreeRTOS timers
@@ -133,10 +106,8 @@ private:
     static void validationTimerCallback(TimerHandle_t xTimer);
 
     IEventBus& m_eventBus;
-    IGate* m_gate;  // Pointer for optional ownership
+    IGate* m_gate;
     ITicketService& m_ticketService;
-
-    std::unique_ptr<Gate> m_ownedGate;  // Only for production constructor
 
     ExitGateState m_state;
     uint32_t m_barrierTimeoutMs;

@@ -148,9 +148,9 @@ int cmd_gpio(int argc, char** argv) {
 
         if (strcmp(gate, "entry") == 0) {
             if (strcmp(component, "button") == 0) {
-                auto& entryGate = g_system->getEntryGate().getGate();
-                if (entryGate.hasButton()) {
-                    bool pressed = !entryGate.getButton().getLevel();  // Active low
+                auto& entryGateHw = g_system->getEntryGateHardware();
+                if (entryGateHw.hasButton()) {
+                    bool pressed = !entryGateHw.getButton().getLevel();  // Active low
                     printf("Entry Button (GPIO 25): %s\n", pressed ? "PRESSED" : "RELEASED");
                 } else {
                     printf("Entry Button: not available\n");
@@ -158,7 +158,7 @@ int cmd_gpio(int argc, char** argv) {
                 return 0;
             }
             if (strcmp(component, "barrier") == 0) {
-                bool blocked = g_system->getEntryGate().getGate().isCarDetected();
+                bool blocked = g_system->getEntryGateHardware().isCarDetected();
                 printf("Entry Light Barrier (GPIO 23): %s\n", blocked ? "BLOCKED" : "CLEAR");
                 return 0;
             }
@@ -168,7 +168,7 @@ int cmd_gpio(int argc, char** argv) {
 
         if (strcmp(gate, "exit") == 0) {
             if (strcmp(component, "barrier") == 0) {
-                bool blocked = g_system->getExitGate().getGate().isCarDetected();
+                bool blocked = g_system->getExitGateHardware().isCarDetected();
                 printf("Exit Light Barrier (GPIO 4): %s\n", blocked ? "BLOCKED" : "CLEAR");
                 return 0;
             }
@@ -205,10 +205,10 @@ int cmd_gpio(int argc, char** argv) {
 
             if (strcmp(gate, "entry") == 0) {
                 if (open) {
-                    g_system->getEntryGate().getGate().open();
+                    g_system->getEntryGateHardware().open();
                     printf("Entry Barrier (GPIO 22): OPENING\n");
                 } else {
-                    g_system->getEntryGate().getGate().close();
+                    g_system->getEntryGateHardware().close();
                     printf("Entry Barrier (GPIO 22): CLOSING\n");
                 }
                 return 0;
@@ -216,10 +216,10 @@ int cmd_gpio(int argc, char** argv) {
 
             if (strcmp(gate, "exit") == 0) {
                 if (open) {
-                    g_system->getExitGate().getGate().open();
+                    g_system->getExitGateHardware().open();
                     printf("Exit Barrier (GPIO 2): OPENING\n");
                 } else {
-                    g_system->getExitGate().getGate().close();
+                    g_system->getExitGateHardware().close();
                     printf("Exit Barrier (GPIO 2): CLOSING\n");
                 }
                 return 0;

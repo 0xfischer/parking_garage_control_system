@@ -4,9 +4,6 @@
 #include "IGpioInput.h"
 #include "IGate.h"
 #include "ITicketService.h"
-#include "Gate.h"
-#include "driver/gpio.h"
-#include "driver/ledc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
 #include <memory>
@@ -26,18 +23,6 @@ enum class EntryGateState {
 };
 
 /**
- * @brief Entry gate controller configuration
- */
-struct EntryGateConfig {
-    gpio_num_t buttonPin;
-    uint32_t buttonDebounceMs;
-    gpio_num_t lightBarrierPin;
-    gpio_num_t motorPin;
-    ledc_channel_t ledcChannel;
-    uint32_t barrierTimeoutMs;
-};
-
-/**
  * @brief Entry gate controller with state machine
  *
  * Handles entry sequence:
@@ -47,24 +32,12 @@ struct EntryGateConfig {
  * 4. Wait for car to pass through
  * 5. Close barrier via IGate interface
  *
- * Manages its own Gate hardware internally.
+ * Uses pure Dependency Injection - all dependencies are injected via constructor.
  */
 class EntryGateController {
 public:
     /**
-     * @brief Construct entry gate controller with config (production)
-     * @param eventBus Event bus for publishing/subscribing
-     * @param ticketService Ticket service
-     * @param config Gate hardware configuration
-     */
-    EntryGateController(
-        IEventBus& eventBus,
-        ITicketService& ticketService,
-        const EntryGateConfig& config
-    );
-
-    /**
-     * @brief Construct entry gate controller with injected dependencies (testing)
+     * @brief Construct entry gate controller with injected dependencies
      * @param eventBus Event bus for publishing/subscribing
      * @param button Entry button input
      * @param gate Gate abstraction (barrier + light barrier)
@@ -97,12 +70,17 @@ public:
 
     /**
      * @brief Get gate reference (for debugging/console commands)
-     * @note Returns concrete Gate& for access to button/light barrier
      */
-    [[nodiscard]] Gate& getGate() { return *m_ownedGate; }
+    [[nodiscard]] IGate& getGate() { return *m_gate; }
 
     /**
-     * @brief Setup GPIO interrupts (only for production constructor)
+     * @brief Get button reference (for debugging/console commands)
+     */
+    [[nodiscard]] IGpioInput& getButton() { return *m_button; }
+
+    /**
+     * @brief Setup GPIO interrupts
+     * Call this after construction to enable hardware interrupts
      */
     void setupGpioInterrupts();
 
@@ -124,12 +102,9 @@ private:
     static void barrierTimerCallback(TimerHandle_t xTimer);
 
     IEventBus& m_eventBus;
-    IGpioInput* m_button;  // Pointer for optional ownership
-    IGate* m_gate;         // Pointer for optional ownership
+    IGpioInput* m_button;
+    IGate* m_gate;
     ITicketService& m_ticketService;
-
-    // Optional owned hardware (only for production constructor)
-    std::unique_ptr<Gate> m_ownedGate;
 
     EntryGateState m_state;
     uint32_t m_barrierTimeoutMs;

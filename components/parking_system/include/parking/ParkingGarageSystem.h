@@ -5,17 +5,20 @@
 #include "FreeRtosEventBus.h"
 #include "TicketService.h"
 #include "ParkingGarageConfig.h"
+#include "Gate.h"
 #include <memory>
 
 /**
  * @brief Main parking garage system orchestrator
  *
- * Manages all components:
- * - Event bus
- * - Ticket service
- * - Entry gate controller
- * - Exit gate controller
- * - GPIO hardware setup
+ * Uses pure Dependency Injection pattern:
+ * - Creates all hardware (Gate, Button, LightBarrier, Motor)
+ * - Creates all services (EventBus, TicketService)
+ * - Injects dependencies into controllers
+ *
+ * Ownership hierarchy:
+ * - ParkingGarageSystem owns: EventBus, TicketService, Gates, Controllers
+ * - Controllers receive references to: EventBus, Gate, TicketService
  */
 class ParkingGarageSystem {
 public:
@@ -56,6 +59,16 @@ public:
     ExitGateController& getExitGate() { return *m_exitGate; }
 
     /**
+     * @brief Get entry gate hardware reference (for console commands)
+     */
+    Gate& getEntryGateHardware() { return *m_entryGateHw; }
+
+    /**
+     * @brief Get exit gate hardware reference (for console commands)
+     */
+    Gate& getExitGateHardware() { return *m_exitGateHw; }
+
+    /**
      * @brief Get system status string
      */
     void getStatus(char* buffer, size_t bufferSize) const;
@@ -67,7 +80,11 @@ private:
     // Services
     std::unique_ptr<TicketService> m_ticketService;
 
-    // Controllers (own their own Gate hardware)
+    // Hardware (owned by ParkingGarageSystem, injected into controllers)
+    std::unique_ptr<Gate> m_entryGateHw;
+    std::unique_ptr<Gate> m_exitGateHw;
+
+    // Controllers (receive injected dependencies)
     std::unique_ptr<EntryGateController> m_entryGate;
     std::unique_ptr<ExitGateController> m_exitGate;
 

@@ -1,53 +1,9 @@
 #include "ExitGateController.h"
-#include "Gate.h"
 #include "esp_log.h"
 
 static const char* TAG = "ExitGateController";
 static const char *exitGateStateToString(ExitGateState state);
 
-#ifndef UNIT_TEST
-// Production constructor - creates own Gate
-ExitGateController::ExitGateController(IEventBus &eventBus, ITicketService &ticketService, const ExitGateConfig &config)
-    : m_eventBus(eventBus), m_ticketService(ticketService), m_state(ExitGateState::Idle),
-      m_barrierTimeoutMs(config.barrierTimeoutMs), m_validationTimeMs(config.validationTimeMs), m_currentTicketId(0),
-      m_barrierTimer(nullptr), m_validationTimer(nullptr)
-{
-    // Create owned gate hardware (no button for exit gate)
-    m_ownedGate = std::make_unique<Gate>(
-        config.lightBarrierPin,
-        config.motorPin,
-        config.ledcChannel
-    );
-    m_gate = m_ownedGate.get();
-
-    // Subscribe to events
-    m_eventBus.subscribe(EventType::ExitLightBarrierBlocked,
-        [this](const Event& e) { onLightBarrierBlocked(e); });
-    m_eventBus.subscribe(EventType::ExitLightBarrierCleared,
-        [this](const Event& e) { onLightBarrierCleared(e); });
-
-    // Create timers
-    m_barrierTimer = xTimerCreate(
-        "ExitBarrierTimer",
-        pdMS_TO_TICKS(m_barrierTimeoutMs),
-        pdFALSE,
-        this,
-        barrierTimerCallback
-    );
-
-    m_validationTimer = xTimerCreate(
-        "ExitValidationTimer",
-        pdMS_TO_TICKS(m_validationTimeMs),
-        pdFALSE,
-        this,
-        validationTimerCallback
-    );
-
-    ESP_LOGI(TAG, "ExitGateController initialized (production mode)");
-}
-#endif // UNIT_TEST
-
-// Test constructor - uses injected dependencies
 ExitGateController::ExitGateController(
     IEventBus& eventBus,
     IGate& gate,
@@ -88,7 +44,7 @@ ExitGateController::ExitGateController(
         validationTimerCallback
     );
 
-    ESP_LOGI(TAG, "ExitGateController initialized (test mode)");
+    ESP_LOGI(TAG, "ExitGateController initialized");
 }
 
 ExitGateController::~ExitGateController() {
@@ -101,20 +57,6 @@ ExitGateController::~ExitGateController() {
 }
 
 void ExitGateController::setupGpioInterrupts() {
-    // Only setup interrupts if we own the gate (production mode)
-    if (!m_ownedGate) {
-        return;
-    }
-
-    // Setup exit light barrier interrupt
-    m_ownedGate->getLightBarrier().setInterruptHandler([this](bool level) {
-        // Barrier blocked when level goes LOW
-        EventType eventType = level ? EventType::ExitLightBarrierCleared : EventType::ExitLightBarrierBlocked;
-        Event event(eventType);
-        m_eventBus.publish(event);
-    });
-    m_ownedGate->getLightBarrier().enableInterrupt();
-
     ESP_LOGI(TAG, "Exit gate GPIO interrupts configured");
 }
 

@@ -3,14 +3,12 @@
 #include "IEventBus.h"
 #include "IGate.h"
 #include "ITicketService.h"
+#include "Gate.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 #include <memory>
-
-// Forward declaration
-class Gate;
 
 /**
  * @brief Exit gate state machine states
@@ -99,6 +97,12 @@ public:
      * @brief Get state as string
      */
     [[nodiscard]] const char* getStateString() const;
+
+    /**
+     * @brief Get gate reference (for debugging/console commands)
+     * @note Returns concrete Gate& for access to light barrier
+     */
+    [[nodiscard]] Gate& getGate() { return *m_ownedGate; }
 
     /**
      * @brief Manually validate ticket (for console commands)

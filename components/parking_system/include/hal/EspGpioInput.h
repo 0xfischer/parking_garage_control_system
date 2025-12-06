@@ -36,7 +36,7 @@ public:
 
 private:
     static IRAM_ATTR void gpioIsrHandler(void* arg);
-    IRAM_ATTR void handleInterrupt();
+    void handleInterrupt();
 
     gpio_num_t m_pin;
     uint32_t m_debounceMs;

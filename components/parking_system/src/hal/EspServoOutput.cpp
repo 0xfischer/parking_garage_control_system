@@ -14,7 +14,9 @@ EspServoOutput::EspServoOutput(gpio_num_t pin, ledc_channel_t ledcChannel, bool 
         .duty_resolution = LEDC_TIMER_14_BIT,  // 14-bit resolution for precise control
         .timer_num = LEDC_TIMER_0,
         .freq_hz = SERVO_FREQ_HZ,
-        .clk_cfg = LEDC_AUTO_CLK
+        .clk_cfg = LEDC_AUTO_CLK,
+        .deconfigure = 0
+        
     };
 
     esp_err_t ret = ledc_timer_config(&timer_conf);

@@ -96,6 +96,12 @@ public:
     [[nodiscard]] const char* getStateString() const;
 
     /**
+     * @brief Get gate reference (for debugging/console commands)
+     * @note Returns concrete Gate& for access to button/light barrier
+     */
+    [[nodiscard]] Gate& getGate() { return *m_ownedGate; }
+
+    /**
      * @brief Setup GPIO interrupts (only for production constructor)
      */
     void setupGpioInterrupts();

@@ -3,10 +3,10 @@
 
 ParkingGarageConfig::ParkingGarageConfig()
     : entryButtonPin(GPIO_NUM_25)
-    , entryLightBarrierPin(GPIO_NUM_15)
+    , entryLightBarrierPin(GPIO_NUM_23)
     , entryMotorPin(GPIO_NUM_22)
-    , exitLightBarrierPin(GPIO_NUM_26)
-    , exitMotorPin(GPIO_NUM_27)
+    , exitLightBarrierPin(GPIO_NUM_4)
+    , exitMotorPin(GPIO_NUM_2)
     , capacity(5)
     , barrierTimeoutMs(2000)
     , buttonDebounceMs(50) {}

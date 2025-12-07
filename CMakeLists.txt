@@ -19,9 +19,9 @@ find_program(RUN_CLANG_TIDY NAMES run-clang-tidy)
 if(CLANG_FORMAT)
 	add_custom_target(format
 		COMMAND ${CMAKE_COMMAND} -E echo "Running clang-format"
-		COMMAND find ${CMAKE_SOURCE_DIR} -type f \( -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \) \
-				-not -path "${CMAKE_SOURCE_DIR}/build/*" -not -path "${CMAKE_SOURCE_DIR}/bootloader/*" -not -path "${CMAKE_SOURCE_DIR}/esp-idf/*" \
-				-print0 | xargs -0 ${CLANG_FORMAT} -i
+		COMMAND bash -lc "find '${CMAKE_SOURCE_DIR}' -type f \( -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) \
+				-not -path '${CMAKE_SOURCE_DIR}/build/*' -not -path '${CMAKE_SOURCE_DIR}/bootloader/*' -not -path '${CMAKE_SOURCE_DIR}/esp-idf/*' \
+				-print0 | xargs -0 '${CLANG_FORMAT}' -i"
 		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 		COMMENT "Formatting sources with clang-format"
 	)

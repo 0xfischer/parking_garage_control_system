@@ -1,0 +1,14 @@
+Checks: '-*,clang-analyzer-*,bugprone-*'
+WarningsAsErrors: 'clang-analyzer-*'
+HeaderFilterRegex: '^(main|components|examples|test)/'
+FormatStyle: none
+SystemHeaders: false
+ExtraArgs:
+  - -DESP_PLATFORM
+  - -Imain
+  - -Icomponents
+  - -Iexamples
+  - -Itest
+  - -Itest/stubs
+  - -Itest/stubs/freertos
+  - -Itest/stubs/driver

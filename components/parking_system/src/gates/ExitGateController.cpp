@@ -2,15 +2,14 @@
 #include "esp_log.h"
 
 static const char* TAG = "ExitGateController";
-static const char *exitGateStateToString(ExitGateState state);
+static const char* exitGateStateToString(ExitGateState state);
 
 ExitGateController::ExitGateController(
     IEventBus& eventBus,
     IGate& gate,
     ITicketService& ticketService,
     uint32_t barrierTimeoutMs,
-    uint32_t validationTimeMs
-)
+    uint32_t validationTimeMs)
     : m_eventBus(eventBus)
     , m_gate(&gate)
     , m_ticketService(ticketService)
@@ -19,13 +18,12 @@ ExitGateController::ExitGateController(
     , m_validationTimeMs(validationTimeMs)
     , m_currentTicketId(0)
     , m_barrierTimer(nullptr)
-    , m_validationTimer(nullptr)
-{
+    , m_validationTimer(nullptr) {
     // Subscribe to events
     m_eventBus.subscribe(EventType::ExitLightBarrierBlocked,
-        [this](const Event& e) { onLightBarrierBlocked(e); });
+                         [this](const Event& e) { onLightBarrierBlocked(e); });
     m_eventBus.subscribe(EventType::ExitLightBarrierCleared,
-        [this](const Event& e) { onLightBarrierCleared(e); });
+                         [this](const Event& e) { onLightBarrierCleared(e); });
 
     // Create timers
     m_barrierTimer = xTimerCreate(
@@ -33,16 +31,14 @@ ExitGateController::ExitGateController(
         pdMS_TO_TICKS(m_barrierTimeoutMs),
         pdFALSE,
         this,
-        barrierTimerCallback
-    );
+        barrierTimerCallback);
 
     m_validationTimer = xTimerCreate(
         "ExitValidationTimer",
         pdMS_TO_TICKS(m_validationTimeMs),
         pdFALSE,
         this,
-        validationTimerCallback
-    );
+        validationTimerCallback);
 
     ESP_LOGI(TAG, "ExitGateController initialized");
 }
@@ -62,14 +58,22 @@ void ExitGateController::setupGpioInterrupts() {
 
 const char* ExitGateController::getStateString() const {
     switch (m_state) {
-        case ExitGateState::Idle: return "Idle";
-        case ExitGateState::ValidatingTicket: return "ValidatingTicket";
-        case ExitGateState::OpeningBarrier: return "OpeningBarrier";
-        case ExitGateState::WaitingForCarToPass: return "WaitingForCarToPass";
-        case ExitGateState::CarPassing: return "CarPassing";
-        case ExitGateState::WaitingBeforeClose: return "WaitingBeforeClose";
-        case ExitGateState::ClosingBarrier: return "ClosingBarrier";
-        default: return "Unknown";
+        case ExitGateState::Idle:
+            return "Idle";
+        case ExitGateState::ValidatingTicket:
+            return "ValidatingTicket";
+        case ExitGateState::OpeningBarrier:
+            return "OpeningBarrier";
+        case ExitGateState::WaitingForCarToPass:
+            return "WaitingForCarToPass";
+        case ExitGateState::CarPassing:
+            return "CarPassing";
+        case ExitGateState::WaitingBeforeClose:
+            return "WaitingBeforeClose";
+        case ExitGateState::ClosingBarrier:
+            return "ClosingBarrier";
+        default:
+            return "Unknown";
     }
 }
 
@@ -81,7 +85,7 @@ void ExitGateController::setState(ExitGateState newState) {
 }
 
 void ExitGateController::onLightBarrierBlocked(const Event& event) {
-    (void)event;
+    (void) event;
     if (m_state == ExitGateState::WaitingForCarToPass) {
         ESP_LOGI(TAG, "Car entering exit barrier");
         setState(ExitGateState::CarPassing);
@@ -91,7 +95,7 @@ void ExitGateController::onLightBarrierBlocked(const Event& event) {
 }
 
 void ExitGateController::onLightBarrierCleared(const Event& event) {
-    (void)event;
+    (void) event;
     if (m_state == ExitGateState::CarPassing) {
         ESP_LOGI(TAG, "Car exited parking, waiting 2 seconds before closing barrier");
         m_eventBus.publish(Event(EventType::CarExitedParking, 0, m_currentTicketId));
@@ -119,7 +123,7 @@ bool ExitGateController::validateTicketManually(uint32_t ticketId) {
         return false;
     }
 
-    ESP_LOGI(TAG, "Starting manual ticket validation for ID=%lu", (unsigned long)ticketId);
+    ESP_LOGI(TAG, "Starting manual ticket validation for ID=%lu", (unsigned long) ticketId);
     setState(ExitGateState::ValidatingTicket);
     m_currentTicketId = ticketId;
 
@@ -128,14 +132,14 @@ bool ExitGateController::validateTicketManually(uint32_t ticketId) {
     if (m_ticketService.getTicketInfo(ticketId, ticket)) {
         if (!ticket.isPaid) {
             ESP_LOGW(TAG, "Ticket not paid: ID=%lu - use 'ticket_pay %lu' command first!",
-                     (unsigned long)ticketId, (unsigned long)ticketId);
+                     (unsigned long) ticketId, (unsigned long) ticketId);
             m_eventBus.publish(Event(EventType::TicketRejected));
             setState(ExitGateState::Idle);
             return false;
         }
 
         if (m_ticketService.validateAndUseTicket(ticketId)) {
-            ESP_LOGI(TAG, "Ticket validation successful: ID=%lu", (unsigned long)ticketId);
+            ESP_LOGI(TAG, "Ticket validation successful: ID=%lu", (unsigned long) ticketId);
             m_eventBus.publish(Event(EventType::TicketValidated, 0, ticketId));
 
             setState(ExitGateState::OpeningBarrier);
@@ -146,7 +150,7 @@ bool ExitGateController::validateTicketManually(uint32_t ticketId) {
         }
     }
 
-    ESP_LOGW(TAG, "Ticket validation failed: ID=%lu", (unsigned long)ticketId);
+    ESP_LOGW(TAG, "Ticket validation failed: ID=%lu", (unsigned long) ticketId);
     m_eventBus.publish(Event(EventType::TicketRejected));
     setState(ExitGateState::Idle);
     return false;
@@ -214,25 +218,23 @@ void ExitGateController::validationTimerCallback(TimerHandle_t xTimer) {
 }
 
 // Helper function to convert state to string (avoids stack-heavy lambda)
-static const char *exitGateStateToString(ExitGateState state)
-{
-    switch (state)
-    {
-    case ExitGateState::Idle:
-        return "Idle";
-    case ExitGateState::ValidatingTicket:
-        return "ValidatingTicket";
-    case ExitGateState::OpeningBarrier:
-        return "OpeningBarrier";
-    case ExitGateState::WaitingForCarToPass:
-        return "WaitingForCarToPass";
-    case ExitGateState::CarPassing:
-        return "CarPassing";
-    case ExitGateState::WaitingBeforeClose:
-        return "WaitingBeforeClose";
-    case ExitGateState::ClosingBarrier:
-        return "ClosingBarrier";
-    default:
-        return "Unknown";
+static const char* exitGateStateToString(ExitGateState state) {
+    switch (state) {
+        case ExitGateState::Idle:
+            return "Idle";
+        case ExitGateState::ValidatingTicket:
+            return "ValidatingTicket";
+        case ExitGateState::OpeningBarrier:
+            return "OpeningBarrier";
+        case ExitGateState::WaitingForCarToPass:
+            return "WaitingForCarToPass";
+        case ExitGateState::CarPassing:
+            return "CarPassing";
+        case ExitGateState::WaitingBeforeClose:
+            return "WaitingBeforeClose";
+        case ExitGateState::ClosingBarrier:
+            return "ClosingBarrier";
+        default:
+            return "Unknown";
     }
 }

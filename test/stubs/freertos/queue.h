@@ -8,7 +8,7 @@ extern "C" {
 
 typedef struct QueueStub {
     int dummy;
-} *QueueHandle_t;
+}* QueueHandle_t;
 
 static inline QueueHandle_t xQueueCreate(UBaseType_t /*uxQueueLength*/, UBaseType_t /*uxItemSize*/) {
     return new QueueStub{0};
@@ -23,7 +23,7 @@ static inline BaseType_t xQueueSend(QueueHandle_t /*xQueue*/, const void* /*pvIt
 }
 
 static inline BaseType_t xQueueReceive(QueueHandle_t /*xQueue*/, void* /*pvBuffer*/, TickType_t /*xTicksToWait*/) {
-    return pdFALSE;  // No items in stub queue
+    return pdFALSE; // No items in stub queue
 }
 
 static inline BaseType_t xQueueSendFromISR(QueueHandle_t /*xQueue*/, const void* /*pvItemToQueue*/, BaseType_t* /*pxHigherPriorityTaskWoken*/) {

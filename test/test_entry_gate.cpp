@@ -32,15 +32,14 @@ void test_entry_full_cycle() {
     MockEventBus eventBus;
     MockGpioInput button;
     MockGate gate;
-    MockTicketService tickets(5);  // Capacity: 5
+    MockTicketService tickets(5); // Capacity: 5
 
     EntryGateController controller(
-        eventBus, button, gate, tickets, 100
-    );
+        eventBus, button, gate, tickets, 100);
 
     // Initial state
     assert(controller.getState() == EntryGateState::Idle);
-    assert(!gate.isOpen());  // Gate closed
+    assert(!gate.isOpen()); // Gate closed
 
     // Step 1: Button press -> publish event directly to bus
     eventBus.publish(Event(EventType::EntryButtonPressed));
@@ -48,7 +47,7 @@ void test_entry_full_cycle() {
 
     // Should transition through states and end up opening barrier
     assert(controller.getState() == EntryGateState::OpeningBarrier);
-    assert(gate.isOpen());  // Gate opening
+    assert(gate.isOpen()); // Gate opening
 
     // Step 2: Simulate barrier opened (timeout)
     controller.TEST_forceBarrierTimeout();
@@ -95,30 +94,29 @@ void test_entry_parking_full() {
     MockEventBus eventBus;
     MockGpioInput button;
     MockGate gate;
-    MockTicketService tickets(2);  // Capacity: 2
+    MockTicketService tickets(2); // Capacity: 2
 
     // Fill parking
-    (void)tickets.getNewTicket();
-    (void)tickets.getNewTicket();
+    (void) tickets.getNewTicket();
+    (void) tickets.getNewTicket();
     assert(tickets.getActiveTicketCount() == 2);
 
     EntryGateController controller(
-        eventBus, button, gate, tickets, 100
-    );
+        eventBus, button, gate, tickets, 100);
 
     // Initial state
     assert(controller.getState() == EntryGateState::Idle);
 
     // Try to enter when full
-        eventBus.publish(Event(EventType::EntryButtonPressed));
-        eventBus.processAllPending();
-        // Ensure that the state remains Idle
-        assert(controller.getState() == EntryGateState::Idle);
-        assert(!gate.isOpen());  // Gate still closed
+    eventBus.publish(Event(EventType::EntryButtonPressed));
+    eventBus.processAllPending();
+    // Ensure that the state remains Idle
+    assert(controller.getState() == EntryGateState::Idle);
+    assert(!gate.isOpen()); // Gate still closed
 
     // Should remain idle
     assert(controller.getState() == EntryGateState::Idle);
-    assert(!gate.isOpen());  // Gate still closed
+    assert(!gate.isOpen()); // Gate still closed
 
     printf("  ✓ Parking full detected\n");
     printf("  ✓ Entry denied\n");
@@ -137,8 +135,7 @@ void test_entry_car_passing() {
     MockTicketService tickets(5);
 
     EntryGateController controller(
-        eventBus, button, gate, tickets, 100
-    );
+        eventBus, button, gate, tickets, 100);
 
     // Simulate reaching WaitingForCar state via button press and barrier timeout
     eventBus.publish(Event(EventType::EntryButtonPressed));
@@ -163,8 +160,7 @@ void test_entry_ignore_repeated_press() {
     MockTicketService tickets(5);
 
     EntryGateController controller(
-        eventBus, button, gate, tickets, 100
-    );
+        eventBus, button, gate, tickets, 100);
 
     // First press -> starts entry flow
     eventBus.publish(Event(EventType::EntryButtonPressed));

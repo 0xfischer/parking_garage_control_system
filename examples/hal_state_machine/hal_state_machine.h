@@ -5,7 +5,7 @@
 
 // Abstract Interface for GPIO Output
 class IGpioOutput {
-public:
+  public:
     virtual void setLevel(bool level) = 0;
     virtual bool getLevel() const = 0;
     virtual ~IGpioOutput() = default;
@@ -25,8 +25,10 @@ struct Event {
 // --- 3. Logic / State Machine ---
 
 class GateController {
-public:
-    enum class State { Closed, Opening, Open };
+  public:
+    enum class State { Closed,
+                       Opening,
+                       Open };
 
     // Dependency Injection: Logic depends on Interface, not concrete Hardware
     explicit GateController(IGpioOutput& motorGpio);
@@ -34,7 +36,7 @@ public:
     void handleEvent(const Event& event);
     State getCurrentState() const { return currentState; }
 
-private:
+  private:
     IGpioOutput& motor; // Reference to abstract hardware
     State currentState;
 };

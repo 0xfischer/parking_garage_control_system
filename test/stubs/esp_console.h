@@ -17,10 +17,19 @@ struct esp_console_repl_config_t {
 };
 struct esp_console_dev_uart_config_t {};
 
-#define ESP_CONSOLE_REPL_CONFIG_DEFAULT() {}
-#define ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT() {}
+#define ESP_CONSOLE_REPL_CONFIG_DEFAULT() \
+    {}
+#define ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT() \
+    {}
 
-inline void esp_console_register_help_command() {}
-inline int esp_console_cmd_register(const esp_console_cmd_t*) { return 0; }
-inline int esp_console_new_repl_uart(esp_console_dev_uart_config_t*, esp_console_repl_config_t*, esp_console_repl_t**) { return 0; }
-inline int esp_console_start_repl(esp_console_repl_t*) { return 0; }
+inline void esp_console_register_help_command() {
+}
+inline int esp_console_cmd_register(const esp_console_cmd_t*) {
+    return 0;
+}
+inline int esp_console_new_repl_uart(esp_console_dev_uart_config_t*, esp_console_repl_config_t*, esp_console_repl_t**) {
+    return 0;
+}
+inline int esp_console_start_repl(esp_console_repl_t*) {
+    return 0;
+}

@@ -26,8 +26,6 @@ void test_entry_does_not_affect_exit() {
     EntryGateController entry(eventBus, entryButton, entryBarrier, entryMotor, tickets, 50);
     ExitGateController exitc(eventBus, exitBarrier, exitMotor, tickets, 50, 10);
 
-    
-
     // Trigger entry flow
     // Publish entry button press on event bus
     eventBus.publish(Event(EventType::EntryButtonPressed));

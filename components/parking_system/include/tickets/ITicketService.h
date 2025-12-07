@@ -11,7 +11,7 @@
  * - Exit: Validate and use ticket
  */
 class ITicketService {
-public:
+  public:
     virtual ~ITicketService() = default;
 
     /**

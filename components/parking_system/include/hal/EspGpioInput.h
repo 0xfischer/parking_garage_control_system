@@ -16,7 +16,7 @@
  * - Software debouncing for buttons
  */
 class EspGpioInput : public IGpioInput {
-public:
+  public:
     /**
      * @brief Construct ESP32 GPIO input
      * @param pin GPIO pin number
@@ -34,7 +34,7 @@ public:
     void enableInterrupt() override;
     void disableInterrupt() override;
 
-private:
+  private:
     static IRAM_ATTR void gpioIsrHandler(void* arg);
     void handleInterrupt();
 

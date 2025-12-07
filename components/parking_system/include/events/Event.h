@@ -47,10 +47,15 @@ struct Event {
     uint64_t timestamp;
     EventPayload payload;
 
-    Event() : type(EventType::EntryButtonPressed), timestamp(0), payload(std::monostate{}) {}
+    Event()
+        : type(EventType::EntryButtonPressed)
+        , timestamp(0)
+        , payload(std::monostate{}) {}
 
     Event(EventType t, uint64_t ts = 0, EventPayload p = std::monostate{})
-        : type(t), timestamp(ts), payload(p) {}
+        : type(t)
+        , timestamp(ts)
+        , payload(p) {}
 };
 
 /**
@@ -58,24 +63,43 @@ struct Event {
  */
 inline const char* eventTypeToString(EventType type) {
     switch (type) {
-        case EventType::EntryButtonPressed: return "EntryButtonPressed";
-        case EventType::EntryButtonReleased: return "EntryButtonReleased";
-        case EventType::EntryLightBarrierBlocked: return "EntryLightBarrierBlocked";
-        case EventType::EntryLightBarrierCleared: return "EntryLightBarrierCleared";
-        case EventType::ExitLightBarrierBlocked: return "ExitLightBarrierBlocked";
-        case EventType::ExitLightBarrierCleared: return "ExitLightBarrierCleared";
-        case EventType::CapacityAvailable: return "CapacityAvailable";
-        case EventType::CapacityFull: return "CapacityFull";
-        case EventType::TicketIssued: return "TicketIssued";
-        case EventType::TicketValidated: return "TicketValidated";
-        case EventType::TicketRejected: return "TicketRejected";
-        case EventType::EntryBarrierOpened: return "EntryBarrierOpened";
-        case EventType::EntryBarrierClosed: return "EntryBarrierClosed";
-        case EventType::ExitBarrierOpened: return "ExitBarrierOpened";
-        case EventType::ExitBarrierClosed: return "ExitBarrierClosed";
-        case EventType::CarEnteredParking: return "CarEnteredParking";
-        case EventType::CarExitedParking: return "CarExitedParking";
-        case EventType::BarrierTimeout: return "BarrierTimeout";
-        default: return "Unknown";
+        case EventType::EntryButtonPressed:
+            return "EntryButtonPressed";
+        case EventType::EntryButtonReleased:
+            return "EntryButtonReleased";
+        case EventType::EntryLightBarrierBlocked:
+            return "EntryLightBarrierBlocked";
+        case EventType::EntryLightBarrierCleared:
+            return "EntryLightBarrierCleared";
+        case EventType::ExitLightBarrierBlocked:
+            return "ExitLightBarrierBlocked";
+        case EventType::ExitLightBarrierCleared:
+            return "ExitLightBarrierCleared";
+        case EventType::CapacityAvailable:
+            return "CapacityAvailable";
+        case EventType::CapacityFull:
+            return "CapacityFull";
+        case EventType::TicketIssued:
+            return "TicketIssued";
+        case EventType::TicketValidated:
+            return "TicketValidated";
+        case EventType::TicketRejected:
+            return "TicketRejected";
+        case EventType::EntryBarrierOpened:
+            return "EntryBarrierOpened";
+        case EventType::EntryBarrierClosed:
+            return "EntryBarrierClosed";
+        case EventType::ExitBarrierOpened:
+            return "ExitBarrierOpened";
+        case EventType::ExitBarrierClosed:
+            return "ExitBarrierClosed";
+        case EventType::CarEnteredParking:
+            return "CarEnteredParking";
+        case EventType::CarExitedParking:
+            return "CarExitedParking";
+        case EventType::BarrierTimeout:
+            return "BarrierTimeout";
+        default:
+            return "Unknown";
     }
 }

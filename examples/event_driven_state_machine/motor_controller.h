@@ -6,21 +6,21 @@
 
 // Motor Controller - receives events and controls actual hardware
 class MotorController {
-public:
+  public:
     void handleEvent(const OutputEvent& event);
 
     // Accessors for testing
     bool isMotorRunning() const { return motorState; }
     int getCurrentSpeed() const { return currentSpeed; }
 
-private:
+  private:
     bool motorState = false;
     int currentSpeed = 0;
 };
 
 // Event Logger - demonstrates multiple subscribers
 class EventLogger {
-public:
+  public:
     void handleEvent(const OutputEvent& event);
 };
 

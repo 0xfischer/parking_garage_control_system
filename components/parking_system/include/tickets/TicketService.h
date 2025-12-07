@@ -12,7 +12,7 @@
  * Stores tickets in memory (no persistence).
  */
 class TicketService : public ITicketService {
-public:
+  public:
     /**
      * @brief Construct ticket service
      * @param capacity Maximum parking capacity
@@ -31,7 +31,7 @@ public:
     [[nodiscard]] uint32_t getActiveTicketCount() const override;
     [[nodiscard]] uint32_t getCapacity() const override;
 
-private:
+  private:
     uint32_t m_capacity;
     uint32_t m_nextTicketId;
     std::map<uint32_t, Ticket> m_tickets;

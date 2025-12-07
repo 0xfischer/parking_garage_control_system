@@ -5,8 +5,7 @@
 static const char* TAG = "ParkingGarageSystem";
 
 ParkingGarageSystem::ParkingGarageSystem(const ParkingGarageConfig& config)
-    : m_config(config)
-{
+    : m_config(config) {
     ESP_LOGI(TAG, "Creating ParkingGarageSystem (Dependency Injection)...");
     ESP_LOGI(TAG, "  Capacity: %lu", config.capacity);
     ESP_LOGI(TAG, "  Entry Button: GPIO %d", config.entryButtonPin);
@@ -26,31 +25,28 @@ ParkingGarageSystem::ParkingGarageSystem(const ParkingGarageConfig& config)
         config.buttonDebounceMs,
         config.entryLightBarrierPin,
         config.entryMotorPin,
-        LEDC_CHANNEL_0
-    );
+        LEDC_CHANNEL_0);
 
     // Exit gate has only light barrier + motor (no button)
     m_exitGateHw = std::make_unique<Gate>(
         config.exitLightBarrierPin,
         config.exitMotorPin,
-        LEDC_CHANNEL_1
-    );
+        LEDC_CHANNEL_1);
 
     // 3. Create controllers with injected dependencies
     m_entryGate = std::make_unique<EntryGateController>(
         *m_eventBus,
-        m_entryGateHw->getButton(),  // Inject button
-        *m_entryGateHw,              // Inject gate
+        m_entryGateHw->getButton(), // Inject button
+        *m_entryGateHw,             // Inject gate
         *m_ticketService,
-        config.barrierTimeoutMs
-    );
+        config.barrierTimeoutMs);
 
     m_exitGate = std::make_unique<ExitGateController>(
         *m_eventBus,
-        *m_exitGateHw,               // Inject gate
+        *m_exitGateHw, // Inject gate
         *m_ticketService,
         config.barrierTimeoutMs,
-        500  // validationTimeMs
+        500 // validationTimeMs
     );
 
     ESP_LOGI(TAG, "ParkingGarageSystem created successfully");
@@ -84,7 +80,7 @@ void ParkingGarageSystem::initialize() {
 }
 
 void ParkingGarageSystem::getStatus(char* buffer, size_t bufferSize) const {
-    if (!buffer || bufferSize == 0) {
+    if (buffer == nullptr || bufferSize == 0) {
         return;
     }
 
@@ -92,12 +88,11 @@ void ParkingGarageSystem::getStatus(char* buffer, size_t bufferSize) const {
     uint32_t capacity = m_ticketService->getCapacity();
 
     snprintf(buffer, bufferSize,
-        "=== Parking System Status ===\n"
-        "Capacity: %lu/%lu (%lu free)\n"
-        "Entry Gate: %s\n"
-        "Exit Gate: %s\n",
-        active, capacity, capacity - active,
-        m_entryGate->getStateString(),
-        m_exitGate->getStateString()
-    );
+             "=== Parking System Status ===\n"
+             "Capacity: %lu/%lu (%lu free)\n"
+             "Entry Gate: %s\n"
+             "Exit Gate: %s\n",
+             active, capacity, capacity - active,
+             m_entryGate->getStateString(),
+             m_exitGate->getStateString());
 }

@@ -12,7 +12,7 @@
  * - HIGH (true) = Servo at 0° (barrier open - horizontal)
  */
 class EspServoOutput : public IGpioOutput {
-public:
+  public:
     /**
      * @brief Construct ESP32 Servo output
      * @param pin GPIO pin number
@@ -29,7 +29,7 @@ public:
     void setLevel(bool high) override;
     [[nodiscard]] bool getLevel() const override;
 
-private:
+  private:
     void setAngle(uint32_t angleDegrees);
 
     gpio_num_t m_pin;
@@ -37,10 +37,10 @@ private:
     bool m_currentLevel;
 
     // Servo constants
-    static constexpr uint32_t SERVO_FREQ_HZ = 50;          // 50Hz for standard servos
-    static constexpr uint32_t SERVO_PERIOD_US = 20000;     // 20ms period
-    static constexpr uint32_t SERVO_MIN_PULSE_US = 1000;   // 1ms = 0°
-    static constexpr uint32_t SERVO_MAX_PULSE_US = 2000;   // 2ms = 180°
-    static constexpr uint32_t SERVO_ANGLE_CLOSED = 90;     // Barrier closed (vertical)
-    static constexpr uint32_t SERVO_ANGLE_OPEN = 0;        // Barrier open (horizontal)
+    static constexpr uint32_t SERVO_FREQ_HZ = 50;        // 50Hz for standard servos
+    static constexpr uint32_t SERVO_PERIOD_US = 20000;   // 20ms period
+    static constexpr uint32_t SERVO_MIN_PULSE_US = 1000; // 1ms = 0°
+    static constexpr uint32_t SERVO_MAX_PULSE_US = 2000; // 2ms = 180°
+    static constexpr uint32_t SERVO_ANGLE_CLOSED = 90;   // Barrier closed (vertical)
+    static constexpr uint32_t SERVO_ANGLE_OPEN = 0;      // Barrier open (horizontal)
 };

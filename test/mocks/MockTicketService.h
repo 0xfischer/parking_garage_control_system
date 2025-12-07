@@ -9,16 +9,15 @@
  * Controllable ticket service for unit tests.
  */
 class MockTicketService : public ITicketService {
-public:
+  public:
     explicit MockTicketService(uint32_t capacity)
         : m_capacity(capacity)
-        , m_nextTicketId(1)
-    {}
+        , m_nextTicketId(1) {}
 
     [[nodiscard]] uint32_t getNewTicket() override {
         uint32_t activeCount = getActiveTicketCount();
         if (activeCount >= m_capacity) {
-            return 0;  // Capacity reached
+            return 0; // Capacity reached
         }
 
         uint32_t ticketId = m_nextTicketId++;
@@ -33,7 +32,7 @@ public:
         }
 
         it->second.isPaid = true;
-        it->second.paymentTimestamp = 123456;  // Mock timestamp
+        it->second.paymentTimestamp = 123456; // Mock timestamp
         return true;
     }
 
@@ -80,7 +79,7 @@ public:
         m_nextTicketId = 1;
     }
 
-private:
+  private:
     uint32_t m_capacity;
     uint32_t m_nextTicketId;
     std::map<uint32_t, Ticket> m_tickets;

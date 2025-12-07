@@ -33,7 +33,7 @@ enum class ExitGateState {
  * Uses pure Dependency Injection - all dependencies are injected via constructor.
  */
 class ExitGateController {
-public:
+  public:
     /**
      * @brief Construct exit gate controller with injected dependencies
      * @param eventBus Event bus for publishing/subscribing
@@ -47,8 +47,7 @@ public:
         IGate& gate,
         ITicketService& ticketService,
         uint32_t barrierTimeoutMs = 2000,
-        uint32_t validationTimeMs = 500
-    );
+        uint32_t validationTimeMs = 500);
 
     ~ExitGateController();
 
@@ -90,7 +89,7 @@ public:
     void TEST_forceValidationTimeout() { onValidationTimeout(); }
 #endif
 
-private:
+  private:
     void onLightBarrierBlocked(const Event& event);
     void onLightBarrierCleared(const Event& event);
     void onBarrierTimeout();

@@ -135,7 +135,7 @@ void test_complete_exit_flow_paid() {
     MockGate exitGate;
     MockGpioInput exitLightBarrier;
     MockTicketService ticketService(5);
-    ParkingGarageSystem system(eventBus, ticketService, exitGate, /*entryButton*/exitLightBarrier /*placeholder*/, exitLightBarrier);
+    ParkingGarageSystem system(eventBus, ticketService, exitGate, /*entryButton*/ exitLightBarrier /*placeholder*/, exitLightBarrier);
     console_test_init(&system);
     // Create a paid ticket via system service
     uint32_t ticketId = system.getTicketService().getNewTicket();
@@ -408,11 +408,11 @@ void test_full_workflow_entry_to_exit() {
     eventBus.publish(buttonEvent);
 
     // Process entry states
-    eventBus.processAllPending(); // CheckingCapacity
-    eventBus.processAllPending(); // IssuingTicket
+    eventBus.processAllPending();                             // CheckingCapacity
+    eventBus.processAllPending();                             // IssuingTicket
     uint32_t ticketId = ticketService.getActiveTicketCount(); // Get ticket ID
-    eventBus.processAllPending(); // OpeningBarrier
-    eventBus.processAllPending(); // WaitingForCar
+    eventBus.processAllPending();                             // OpeningBarrier
+    eventBus.processAllPending();                             // WaitingForCar
 
     // Car enters and clears
     Event entryBlocked(EventType::EntryLightBarrierBlocked);

@@ -9,7 +9,7 @@
  * Simple GPIO output control for barrier motors and other actuators.
  */
 class EspGpioOutput : public IGpioOutput {
-public:
+  public:
     /**
      * @brief Construct ESP32 GPIO output
      * @param pin GPIO pin number
@@ -25,7 +25,7 @@ public:
     void setLevel(bool high) override;
     [[nodiscard]] bool getLevel() const override;
 
-private:
+  private:
     gpio_num_t m_pin;
     bool m_currentLevel;
 };

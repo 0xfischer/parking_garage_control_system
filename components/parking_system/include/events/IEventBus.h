@@ -10,7 +10,7 @@
  * Thread-safe implementation required for FreeRTOS multi-tasking.
  */
 class IEventBus {
-public:
+  public:
     virtual ~IEventBus() = default;
 
     /**

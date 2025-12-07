@@ -53,7 +53,7 @@ int cmd_ticket(int argc, char** argv) {
 
         // List all tickets (simplified - in real system would have better data structure)
         printf("\nActive Tickets:\n");
-        for (uint32_t id = 1; id < 100; id++) {  // Check first 100 IDs
+        for (uint32_t id = 1; id < 100; id++) { // Check first 100 IDs
             Ticket ticket;
             if (ticketService.getTicketInfo(id, ticket) && !ticket.isUsed) {
                 printf("  Ticket #%lu: %s\n", id, ticket.isPaid ? "PAID" : "UNPAID");
@@ -150,7 +150,7 @@ int cmd_gpio(int argc, char** argv) {
             if (strcmp(component, "button") == 0) {
                 auto& entryGateHw = g_system->getEntryGateHardware();
                 if (entryGateHw.hasButton()) {
-                    bool pressed = !entryGateHw.getButton().getLevel();  // Active low
+                    bool pressed = !entryGateHw.getButton().getLevel(); // Active low
                     printf("Entry Button (GPIO 25): %s\n", pressed ? "PRESSED" : "RELEASED");
                 } else {
                     printf("Entry Button: not available\n");
@@ -386,7 +386,7 @@ int cmd_test(int argc, char** argv) {
     if (strcmp(subcommand, "entry") == 0) {
         printf("\n=== Entry Gate Hardware Test ===\n\n");
         printf("Current State: %s\n\n",
-            g_system->getEntryGate().getState() == EntryGateState::Idle ? "Idle" : "Active");
+               g_system->getEntryGate().getState() == EntryGateState::Idle ? "Idle" : "Active");
 
         printf("Test Steps:\n");
         printf("1. Press entry button (GPIO 25 -> GND)\n");
@@ -411,7 +411,7 @@ int cmd_test(int argc, char** argv) {
     if (strcmp(subcommand, "exit") == 0) {
         printf("\n=== Exit Gate Hardware Test ===\n\n");
         printf("Current State: %s\n\n",
-            g_system->getExitGate().getState() == ExitGateState::Idle ? "Idle" : "Active");
+               g_system->getExitGate().getState() == ExitGateState::Idle ? "Idle" : "Active");
 
         printf("Prerequisites:\n");
         printf("- At least one paid ticket (use 'ticket pay <id>')\n");

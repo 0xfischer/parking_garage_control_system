@@ -9,7 +9,8 @@ ParkingGarageConfig::ParkingGarageConfig()
     , exitMotorPin(GPIO_NUM_2)
     , capacity(5)
     , barrierTimeoutMs(2000)
-    , buttonDebounceMs(50) {}
+    , buttonDebounceMs(50) {
+}
 
 bool ParkingGarageConfig::isValid() const {
     // Check that all pins are different

@@ -11,7 +11,7 @@
  * Provides deterministic event processing for unit tests.
  */
 class MockEventBus : public IEventBus {
-public:
+  public:
     MockEventBus() = default;
 
     void subscribe(EventType type, std::function<void(const Event&)> handler) override {
@@ -32,7 +32,7 @@ public:
     }
 
     [[nodiscard]] bool waitForEvent(Event& outEvent, uint32_t timeoutMs) override {
-        (void)timeoutMs;
+        (void) timeoutMs;
         if (m_queue.empty()) {
             return false;
         }
@@ -59,7 +59,7 @@ public:
     const std::vector<Event>& history() const { return m_history; }
     size_t historyCount() const { return m_history.size(); }
 
-private:
+  private:
     void dispatchEvent(const Event& event) {
         auto it = m_subscribers.find(event.type);
         if (it != m_subscribers.end()) {

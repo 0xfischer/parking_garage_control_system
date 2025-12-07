@@ -1,7 +1,8 @@
 #include "event_driven_state_machine.h"
 
 EventDrivenStateMachine::EventDrivenStateMachine()
-    : currentState(State::Idle) {}
+    : currentState(State::Idle) {
+}
 
 void EventDrivenStateMachine::subscribe(EventEmitter emitter) {
     subscribers.push_back(std::move(emitter));

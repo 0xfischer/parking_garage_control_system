@@ -6,8 +6,7 @@ static const char* TAG = "TicketService";
 
 TicketService::TicketService(uint32_t capacity)
     : m_capacity(capacity)
-    , m_nextTicketId(1)
-{
+    , m_nextTicketId(1) {
     m_mutex = xSemaphoreCreateMutex();
     if (!m_mutex) {
         ESP_LOGE(TAG, "Failed to create mutex");
@@ -35,7 +34,7 @@ uint32_t TicketService::getNewTicket() {
         if (activeCount >= m_capacity) {
             ESP_LOGW(TAG, "Parking full! Cannot issue new ticket (capacity: %lu)", m_capacity);
             xSemaphoreGive(m_mutex);
-            return 0;  // Capacity reached
+            return 0; // Capacity reached
         }
 
         // Create new ticket
@@ -64,7 +63,7 @@ bool TicketService::payTicket(uint32_t ticketId) {
         if (it->second.isPaid) {
             ESP_LOGW(TAG, "Ticket already paid: ID=%lu", ticketId);
             xSemaphoreGive(m_mutex);
-            return true;  // Already paid is not an error
+            return true; // Already paid is not an error
         }
 
         it->second.isPaid = true;

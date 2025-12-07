@@ -10,15 +10,14 @@ EspGpioInput::EspGpioInput(gpio_num_t pin, uint32_t debounceMs)
     : m_pin(pin)
     , m_debounceMs(debounceMs)
     , m_handler(nullptr)
-    , m_lastInterruptTime(0)
-{
+    , m_lastInterruptTime(0) {
     // Configure GPIO: enable internal pull-up by default for stable input
     gpio_config_t io_conf = {};
     io_conf.pin_bit_mask = (1ULL << pin);
     io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;    // Use internal pull-up to avoid floating
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;      // Use internal pull-up to avoid floating
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE; // Adjust per sensor if needed
-    io_conf.intr_type = GPIO_INTR_ANYEDGE;  // Interrupt on both edges
+    io_conf.intr_type = GPIO_INTR_ANYEDGE;        // Interrupt on both edges
 
     esp_err_t ret = gpio_config(&io_conf);
     if (ret != ESP_OK) {
@@ -55,7 +54,7 @@ void EspGpioInput::enableInterrupt() {
         if (ret == ESP_OK) {
             isr_service_installed = true;
             ESP_LOGI(TAG, "GPIO ISR service installed");
-        } else if (ret != ESP_ERR_INVALID_STATE) {  // Already installed
+        } else if (ret != ESP_ERR_INVALID_STATE) { // Already installed
             ESP_LOGE(TAG, "Failed to install ISR service: %s", esp_err_to_name(ret));
             return;
         }
@@ -81,8 +80,8 @@ void IRAM_ATTR EspGpioInput::gpioIsrHandler(void* arg) {
     auto* input = static_cast<EspGpioInput*>(arg);
     if (input) {
         // Simple debug: count interrupts (visible in debugger)
-    static std::atomic<uint32_t> isr_count{0};
-    isr_count.fetch_add(1, std::memory_order_relaxed);
+        static std::atomic<uint32_t> isr_count{0};
+        isr_count.fetch_add(1, std::memory_order_relaxed);
         input->handleInterrupt();
     }
 }
@@ -104,7 +103,7 @@ void IRAM_ATTR EspGpioInput::handleInterrupt() {
             // Debug: count debounced interrupts
             static std::atomic<uint32_t> debounce_blocked{0};
             debounce_blocked.fetch_add(1, std::memory_order_relaxed);
-            return;  // Ignore this interrupt (debounce period)
+            return; // Ignore this interrupt (debounce period)
         }
 
         m_lastInterruptTime = now;

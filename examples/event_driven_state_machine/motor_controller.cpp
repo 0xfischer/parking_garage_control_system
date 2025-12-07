@@ -43,11 +43,21 @@ void EventLogger::handleEvent(const OutputEvent& event) {
     std::cout << "[EventLogger] Event: ";
 
     switch (event.type) {
-        case OutputEventType::MotorOn:              std::cout << "MotorOn"; break;
-        case OutputEventType::MotorOff:             std::cout << "MotorOff"; break;
-        case OutputEventType::MotorSpeedChange:     std::cout << "MotorSpeedChange"; break;
-        case OutputEventType::MotorDirectionChange: std::cout << "MotorDirectionChange"; break;
-        case OutputEventType::SystemReset:          std::cout << "SystemReset"; break;
+        case OutputEventType::MotorOn:
+            std::cout << "MotorOn";
+            break;
+        case OutputEventType::MotorOff:
+            std::cout << "MotorOff";
+            break;
+        case OutputEventType::MotorSpeedChange:
+            std::cout << "MotorSpeedChange";
+            break;
+        case OutputEventType::MotorDirectionChange:
+            std::cout << "MotorDirectionChange";
+            break;
+        case OutputEventType::SystemReset:
+            std::cout << "SystemReset";
+            break;
     }
 
     // Try to extract known payload types

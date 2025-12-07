@@ -6,7 +6,7 @@
 // --- Mock Motor Controller for Testing ---
 
 class MockMotorController {
-public:
+  public:
     void handleEvent(const OutputEvent& event) {
         receivedEvents.push_back(event.type);
 
@@ -47,7 +47,7 @@ public:
     const std::vector<OutputEventType>& getReceivedEvents() const { return receivedEvents; }
     void clearEvents() { receivedEvents.clear(); }
 
-private:
+  private:
     bool motorRunning = false;
     int currentSpeed = 0;
     bool direction = true;
@@ -57,7 +57,7 @@ private:
 // --- Event Recorder for Assertions ---
 
 class EventRecorder {
-public:
+  public:
     void handleEvent(const OutputEvent& event) {
         events.push_back(event);
     }
@@ -68,14 +68,14 @@ public:
         return events.at(index).type;
     }
 
-    template<typename T>
+    template <typename T>
     std::optional<T> getEventPayload(size_t index) const {
         return events.at(index).getPayload<T>();
     }
 
     void clear() { events.clear(); }
 
-private:
+  private:
     std::vector<OutputEvent> events;
 };
 

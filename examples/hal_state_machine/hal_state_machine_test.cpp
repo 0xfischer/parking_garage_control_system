@@ -6,7 +6,7 @@
 // --- Mock GPIO for Testing ---
 
 class MockGpio : public IGpioOutput {
-public:
+  public:
     void setLevel(bool level) override {
         levelHistory.push_back(level);
         currentLevel = level;
@@ -25,7 +25,7 @@ public:
         levelHistory.clear();
     }
 
-private:
+  private:
     bool currentLevel = false;
     std::vector<bool> levelHistory;
 };

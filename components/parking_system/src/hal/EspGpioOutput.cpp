@@ -5,8 +5,7 @@ static const char* TAG = "EspGpioOutput";
 
 EspGpioOutput::EspGpioOutput(gpio_num_t pin, bool initialLevel)
     : m_pin(pin)
-    , m_currentLevel(initialLevel)
-{
+    , m_currentLevel(initialLevel) {
     // Configure GPIO as output
     gpio_config_t io_conf = {};
     io_conf.pin_bit_mask = (1ULL << pin);

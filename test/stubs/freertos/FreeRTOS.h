@@ -26,5 +26,5 @@ typedef uint32_t TickType_t;
 #endif
 
 #ifndef portYIELD_FROM_ISR
-#define portYIELD_FROM_ISR(x) (void)(x)
+#define portYIELD_FROM_ISR(x) (void) (x)
 #endif

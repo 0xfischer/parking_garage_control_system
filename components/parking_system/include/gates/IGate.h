@@ -7,7 +7,7 @@
  * allowing the gate controller logic to be independent of hardware specifics.
  */
 class IGate {
-public:
+  public:
     virtual ~IGate() = default;
 
     /**

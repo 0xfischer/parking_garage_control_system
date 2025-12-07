@@ -2,15 +2,14 @@
 #include "esp_log.h"
 
 static const char* TAG = "EntryGateController";
-static const char *entryGateStateToString(EntryGateState state);
+static const char* entryGateStateToString(EntryGateState state);
 
 EntryGateController::EntryGateController(
     IEventBus& eventBus,
     IGpioInput& button,
     IGate& gate,
     ITicketService& ticketService,
-    uint32_t barrierTimeoutMs
-)
+    uint32_t barrierTimeoutMs)
     : m_eventBus(eventBus)
     , m_button(&button)
     , m_gate(&gate)
@@ -18,15 +17,14 @@ EntryGateController::EntryGateController(
     , m_state(EntryGateState::Idle)
     , m_barrierTimeoutMs(barrierTimeoutMs)
     , m_currentTicketId(0)
-    , m_barrierTimer(nullptr)
-{
+    , m_barrierTimer(nullptr) {
     // Subscribe to events
     m_eventBus.subscribe(EventType::EntryButtonPressed,
-        [this](const Event& e) { onButtonPressed(e); });
+                         [this](const Event& e) { onButtonPressed(e); });
     m_eventBus.subscribe(EventType::EntryLightBarrierBlocked,
-        [this](const Event& e) { onLightBarrierBlocked(e); });
+                         [this](const Event& e) { onLightBarrierBlocked(e); });
     m_eventBus.subscribe(EventType::EntryLightBarrierCleared,
-        [this](const Event& e) { onLightBarrierCleared(e); });
+                         [this](const Event& e) { onLightBarrierCleared(e); });
 
     // Create barrier timer
     m_barrierTimer = xTimerCreate(
@@ -34,8 +32,7 @@ EntryGateController::EntryGateController(
         pdMS_TO_TICKS(m_barrierTimeoutMs),
         pdFALSE,
         this,
-        barrierTimerCallback
-    );
+        barrierTimerCallback);
 
     ESP_LOGI(TAG, "EntryGateController initialized");
 }
@@ -61,15 +58,24 @@ void EntryGateController::setupGpioInterrupts() {
 
 const char* EntryGateController::getStateString() const {
     switch (m_state) {
-        case EntryGateState::Idle: return "Idle";
-        case EntryGateState::CheckingCapacity: return "CheckingCapacity";
-        case EntryGateState::IssuingTicket: return "IssuingTicket";
-        case EntryGateState::OpeningBarrier: return "OpeningBarrier";
-        case EntryGateState::WaitingForCar: return "WaitingForCar";
-        case EntryGateState::CarPassing: return "CarPassing";
-        case EntryGateState::WaitingBeforeClose: return "WaitingBeforeClose";
-        case EntryGateState::ClosingBarrier: return "ClosingBarrier";
-        default: return "Unknown";
+        case EntryGateState::Idle:
+            return "Idle";
+        case EntryGateState::CheckingCapacity:
+            return "CheckingCapacity";
+        case EntryGateState::IssuingTicket:
+            return "IssuingTicket";
+        case EntryGateState::OpeningBarrier:
+            return "OpeningBarrier";
+        case EntryGateState::WaitingForCar:
+            return "WaitingForCar";
+        case EntryGateState::CarPassing:
+            return "CarPassing";
+        case EntryGateState::WaitingBeforeClose:
+            return "WaitingBeforeClose";
+        case EntryGateState::ClosingBarrier:
+            return "ClosingBarrier";
+        default:
+            return "Unknown";
     }
 }
 
@@ -81,7 +87,7 @@ void EntryGateController::setState(EntryGateState newState) {
 }
 
 void EntryGateController::onButtonPressed(const Event& event) {
-    (void)event;
+    (void) event;
     if (m_state != EntryGateState::Idle) {
         ESP_LOGW(TAG, "Button pressed in non-Idle state, ignoring");
         return;
@@ -95,7 +101,7 @@ void EntryGateController::onButtonPressed(const Event& event) {
     uint32_t capacity = m_ticketService.getCapacity();
 
     if (activeCount >= capacity) {
-    ESP_LOGW(TAG, "Parking full! (%lu/%lu)", (unsigned long)activeCount, (unsigned long)capacity);
+        ESP_LOGW(TAG, "Parking full! (%lu/%lu)", (unsigned long) activeCount, (unsigned long) capacity);
         m_eventBus.publish(Event(EventType::CapacityFull));
         setState(EntryGateState::Idle);
         return;
@@ -111,7 +117,7 @@ void EntryGateController::onButtonPressed(const Event& event) {
         return;
     }
 
-    ESP_LOGI(TAG, "Ticket issued: ID=%lu", (unsigned long)m_currentTicketId);
+    ESP_LOGI(TAG, "Ticket issued: ID=%lu", (unsigned long) m_currentTicketId);
     m_eventBus.publish(Event(EventType::TicketIssued, 0, m_currentTicketId));
 
     // Open barrier
@@ -122,7 +128,7 @@ void EntryGateController::onButtonPressed(const Event& event) {
 }
 
 void EntryGateController::onLightBarrierBlocked(const Event& event) {
-    (void)event;
+    (void) event;
     if (m_state == EntryGateState::WaitingForCar) {
         ESP_LOGI(TAG, "Car entering");
         setState(EntryGateState::CarPassing);
@@ -130,7 +136,7 @@ void EntryGateController::onLightBarrierBlocked(const Event& event) {
 }
 
 void EntryGateController::onLightBarrierCleared(const Event& event) {
-    (void)event;
+    (void) event;
     if (m_state == EntryGateState::CarPassing) {
         ESP_LOGI(TAG, "Car passed through, waiting 2 seconds before closing barrier");
         m_eventBus.publish(Event(EventType::CarEnteredParking, 0, m_currentTicketId));
@@ -191,27 +197,25 @@ void EntryGateController::barrierTimerCallback(TimerHandle_t xTimer) {
 }
 
 // Helper function to convert state to string (avoids stack-heavy lambda)
-static const char *entryGateStateToString(EntryGateState state)
-{
-    switch (state)
-    {
-    case EntryGateState::Idle:
-        return "Idle";
-    case EntryGateState::CheckingCapacity:
-        return "CheckingCapacity";
-    case EntryGateState::IssuingTicket:
-        return "IssuingTicket";
-    case EntryGateState::OpeningBarrier:
-        return "OpeningBarrier";
-    case EntryGateState::WaitingForCar:
-        return "WaitingForCar";
-    case EntryGateState::CarPassing:
-        return "CarPassing";
-    case EntryGateState::WaitingBeforeClose:
-        return "WaitingBeforeClose";
-    case EntryGateState::ClosingBarrier:
-        return "ClosingBarrier";
-    default:
-        return "Unknown";
+static const char* entryGateStateToString(EntryGateState state) {
+    switch (state) {
+        case EntryGateState::Idle:
+            return "Idle";
+        case EntryGateState::CheckingCapacity:
+            return "CheckingCapacity";
+        case EntryGateState::IssuingTicket:
+            return "IssuingTicket";
+        case EntryGateState::OpeningBarrier:
+            return "OpeningBarrier";
+        case EntryGateState::WaitingForCar:
+            return "WaitingForCar";
+        case EntryGateState::CarPassing:
+            return "CarPassing";
+        case EntryGateState::WaitingBeforeClose:
+            return "WaitingBeforeClose";
+        case EntryGateState::ClosingBarrier:
+            return "ClosingBarrier";
+        default:
+            return "Unknown";
     }
 }

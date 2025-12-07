@@ -30,14 +30,15 @@ struct InputEvent {
     InputEventType type;
     std::any payload;
 
-    template<typename T>
+    template <typename T>
     InputEvent(InputEventType t, T p)
-        : type(t), payload(std::make_any<T>(std::move(p))) {}
+        : type(t)
+        , payload(std::make_any<T>(std::move(p))) {}
 
     explicit InputEvent(InputEventType t)
         : type(t) {}
 
-    template<typename T>
+    template <typename T>
     std::optional<T> getPayload() const {
         try {
             return std::any_cast<T>(payload);
@@ -51,14 +52,15 @@ struct OutputEvent {
     OutputEventType type;
     std::any payload;
 
-    template<typename T>
+    template <typename T>
     OutputEvent(OutputEventType t, T p)
-        : type(t), payload(std::make_any<T>(std::move(p))) {}
+        : type(t)
+        , payload(std::make_any<T>(std::move(p))) {}
 
     explicit OutputEvent(OutputEventType t)
         : type(t) {}
 
-    template<typename T>
+    template <typename T>
     std::optional<T> getPayload() const {
         try {
             return std::any_cast<T>(payload);
@@ -76,13 +78,13 @@ struct MotorSpeed {
 
 struct MotorConfig {
     int speed;
-    bool direction;  // true = forward, false = reverse
+    bool direction; // true = forward, false = reverse
 };
 
 // --- Event-Driven State Machine ---
 
 class EventDrivenStateMachine {
-public:
+  public:
     enum class State {
         Idle,
         MotorRunning,
@@ -97,11 +99,11 @@ public:
     void processEvent(const InputEvent& event);
     State getCurrentState() const { return currentState; }
 
-private:
+  private:
     State currentState;
     std::vector<EventEmitter> subscribers;
 
-    template<typename T>
+    template <typename T>
     void emit(OutputEventType type, T&& payload) {
         OutputEvent event(type, std::forward<T>(payload));
         for (auto& subscriber : subscribers) {

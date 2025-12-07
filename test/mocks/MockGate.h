@@ -6,8 +6,10 @@
  * @brief Mock implementation of IGate for testing
  */
 class MockGate : public IGate {
-public:
-    MockGate() : m_isOpen(false), m_carDetected(false) {}
+  public:
+    MockGate()
+        : m_isOpen(false)
+        , m_carDetected(false) {}
 
     void open() override {
         m_isOpen = true;
@@ -30,7 +32,7 @@ public:
         m_carDetected = detected;
     }
 
-private:
+  private:
     bool m_isOpen;
     bool m_carDetected;
 };

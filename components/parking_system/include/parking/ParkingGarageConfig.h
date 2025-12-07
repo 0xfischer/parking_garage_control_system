@@ -10,7 +10,7 @@
  * to configure the parking garage control system.
  */
 class ParkingGarageConfig {
-public:
+  public:
     // GPIO pin assignments
     gpio_num_t entryButtonPin;
     gpio_num_t entryLightBarrierPin;
@@ -19,9 +19,9 @@ public:
     gpio_num_t exitMotorPin;
 
     // System parameters
-    uint32_t capacity;              // Maximum parking capacity
-    uint32_t barrierTimeoutMs;      // Barrier operation timeout
-    uint32_t buttonDebounceMs;      // Button debounce time
+    uint32_t capacity;         // Maximum parking capacity
+    uint32_t barrierTimeoutMs; // Barrier operation timeout
+    uint32_t buttonDebounceMs; // Button debounce time
 
     /**
      * @brief Default constructor with sensible defaults

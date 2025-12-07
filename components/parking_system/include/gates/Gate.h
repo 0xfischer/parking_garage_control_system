@@ -13,7 +13,7 @@
  * Creates and manages light barrier, motor, and optional button hardware
  */
 class Gate : public IGate {
-public:
+  public:
     /**
      * @brief Construct a gate with GPIO pins (without button)
      * @param lightBarrierPin GPIO pin for light barrier sensor
@@ -55,8 +55,8 @@ public:
      */
     EspGpioInput& getLightBarrier() { return *m_lightBarrier; }
 
-private:
-    std::unique_ptr<EspGpioInput> m_button;  // Optional
+  private:
+    std::unique_ptr<EspGpioInput> m_button; // Optional
     std::unique_ptr<EspGpioInput> m_lightBarrier;
     std::unique_ptr<EspServoOutput> m_motor;
     bool m_isOpen;

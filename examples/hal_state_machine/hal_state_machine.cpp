@@ -4,7 +4,9 @@
 // --- GateController Implementation ---
 
 GateController::GateController(IGpioOutput& motorGpio)
-    : motor(motorGpio), currentState(State::Closed) {}
+    : motor(motorGpio)
+    , currentState(State::Closed) {
+}
 
 void GateController::handleEvent(const Event& event) {
     switch (currentState) {

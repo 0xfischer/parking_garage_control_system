@@ -15,7 +15,7 @@ int main() {
 
     // Event Loop Simulation
     std::cout << "=== Sending ButtonPressed event ===\n";
-    gate.handleEvent({EventType::ButtonPressed});      // Triggers Closed -> Opening
+    gate.handleEvent({EventType::ButtonPressed}); // Triggers Closed -> Opening
     std::cout << "Current state: "
               << (gate.getCurrentState() == GateController::State::Opening ? "Opening" : "Other")
               << "\n\n";

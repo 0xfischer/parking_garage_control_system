@@ -27,8 +27,7 @@ static constexpr gpio_num_t EXIT_LIGHT_BARRIER_PIN = GPIO_NUM_4;
 /**
  * Test: Unpaid ticket rejection
  */
-TEST_CASE("Exit rejects unpaid ticket", "[exit][hw]")
-{
+TEST_CASE("Exit rejects unpaid ticket", "[exit][hw]") {
     auto& ticketService = g_system->getTicketService();
     auto& exitController = g_system->getExitGate();
 
@@ -48,8 +47,7 @@ TEST_CASE("Exit rejects unpaid ticket", "[exit][hw]")
 /**
  * Test: Paid ticket allows exit
  */
-TEST_CASE("Exit accepts paid ticket", "[exit][hw]")
-{
+TEST_CASE("Exit accepts paid ticket", "[exit][hw]") {
     auto& ticketService = g_system->getTicketService();
     auto& exitController = g_system->getExitGate();
 
@@ -80,9 +78,9 @@ TEST_CASE("Exit accepts paid ticket", "[exit][hw]")
 
     // Simulate car passing through exit
     gpio_set_direction(EXIT_LIGHT_BARRIER_PIN, GPIO_MODE_OUTPUT);
-    gpio_set_level(EXIT_LIGHT_BARRIER_PIN, 0);  // Block
+    gpio_set_level(EXIT_LIGHT_BARRIER_PIN, 0); // Block
     vTaskDelay(pdMS_TO_TICKS(200));
-    gpio_set_level(EXIT_LIGHT_BARRIER_PIN, 1);  // Clear
+    gpio_set_level(EXIT_LIGHT_BARRIER_PIN, 1); // Clear
     gpio_set_direction(EXIT_LIGHT_BARRIER_PIN, GPIO_MODE_INPUT);
 
     // Wait for barrier to close
@@ -94,8 +92,7 @@ TEST_CASE("Exit accepts paid ticket", "[exit][hw]")
 /**
  * Test: Complete exit cycle
  */
-TEST_CASE("Complete exit cycle with light barrier", "[exit][hw][slow]")
-{
+TEST_CASE("Complete exit cycle with light barrier", "[exit][hw][slow]") {
     auto& ticketService = g_system->getTicketService();
     auto& exitController = g_system->getExitGate();
 
@@ -123,12 +120,12 @@ TEST_CASE("Complete exit cycle with light barrier", "[exit][hw][slow]")
 
     // Simulate car passing
     gpio_set_direction(EXIT_LIGHT_BARRIER_PIN, GPIO_MODE_OUTPUT);
-    gpio_set_level(EXIT_LIGHT_BARRIER_PIN, 0);  // Car enters barrier area
+    gpio_set_level(EXIT_LIGHT_BARRIER_PIN, 0); // Car enters barrier area
     vTaskDelay(pdMS_TO_TICKS(200));
 
     TEST_ASSERT_EQUAL(ExitGateState::CarPassing, exitController.getState());
 
-    gpio_set_level(EXIT_LIGHT_BARRIER_PIN, 1);  // Car clears barrier
+    gpio_set_level(EXIT_LIGHT_BARRIER_PIN, 1); // Car clears barrier
     gpio_set_direction(EXIT_LIGHT_BARRIER_PIN, GPIO_MODE_INPUT);
 
     // Wait for safety delay + close

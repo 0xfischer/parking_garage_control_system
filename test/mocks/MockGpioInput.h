@@ -8,8 +8,11 @@
  * Allows simulation of GPIO state changes and interrupt triggering.
  */
 class MockGpioInput : public IGpioInput {
-public:
-    MockGpioInput() : m_level(false), m_handler(nullptr), m_interruptEnabled(false) {}
+  public:
+    MockGpioInput()
+        : m_level(false)
+        , m_handler(nullptr)
+        , m_interruptEnabled(false) {}
 
     [[nodiscard]] bool getLevel() const override {
         return m_level;
@@ -43,7 +46,7 @@ public:
         return m_interruptEnabled;
     }
 
-private:
+  private:
     bool m_level;
     std::function<void(bool)> m_handler;
     bool m_interruptEnabled;

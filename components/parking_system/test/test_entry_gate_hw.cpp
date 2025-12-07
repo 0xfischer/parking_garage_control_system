@@ -27,8 +27,7 @@ static ParkingGarageSystem* g_system = nullptr;
 static constexpr gpio_num_t ENTRY_BUTTON_PIN = GPIO_NUM_25;
 static constexpr gpio_num_t ENTRY_LIGHT_BARRIER_PIN = GPIO_NUM_23;
 
-void setUp(void)
-{
+void setUp(void) {
     if (g_system == nullptr) {
         ParkingGarageConfig config = ParkingGarageConfig::getDefault();
         g_system = new ParkingGarageSystem(config);
@@ -38,16 +37,14 @@ void setUp(void)
     }
 }
 
-void tearDown(void)
-{
+void tearDown(void) {
     // Don't delete system between tests to avoid re-initialization issues
 }
 
 /**
  * Test: Entry button press triggers state change
  */
-TEST_CASE("Entry button triggers CheckingCapacity state", "[entry][hw]")
-{
+TEST_CASE("Entry button triggers CheckingCapacity state", "[entry][hw]") {
     auto& controller = g_system->getEntryGate();
 
     // Ensure we start in Idle
@@ -55,9 +52,9 @@ TEST_CASE("Entry button triggers CheckingCapacity state", "[entry][hw]")
 
     // Simulate button press by pulling GPIO low (active low with pull-up)
     gpio_set_direction(ENTRY_BUTTON_PIN, GPIO_MODE_OUTPUT);
-    gpio_set_level(ENTRY_BUTTON_PIN, 0);  // Press
+    gpio_set_level(ENTRY_BUTTON_PIN, 0); // Press
     vTaskDelay(pdMS_TO_TICKS(100));
-    gpio_set_level(ENTRY_BUTTON_PIN, 1);  // Release
+    gpio_set_level(ENTRY_BUTTON_PIN, 1); // Release
     gpio_set_direction(ENTRY_BUTTON_PIN, GPIO_MODE_INPUT);
 
     // Wait for state machine to process
@@ -72,8 +69,7 @@ TEST_CASE("Entry button triggers CheckingCapacity state", "[entry][hw]")
 /**
  * Test: Ticket issuance on entry
  */
-TEST_CASE("Entry flow issues ticket", "[entry][hw]")
-{
+TEST_CASE("Entry flow issues ticket", "[entry][hw]") {
     auto& ticketService = g_system->getTicketService();
     uint32_t ticketsBefore = ticketService.getActiveTicketCount();
 
@@ -96,8 +92,7 @@ TEST_CASE("Entry flow issues ticket", "[entry][hw]")
 /**
  * Test: Complete entry cycle with light barrier
  */
-TEST_CASE("Complete entry cycle", "[entry][hw][slow]")
-{
+TEST_CASE("Complete entry cycle", "[entry][hw][slow]") {
     auto& controller = g_system->getEntryGate();
 
     // Start in Idle
@@ -124,13 +119,13 @@ TEST_CASE("Complete entry cycle", "[entry][hw][slow]")
 
     // Simulate car blocking light barrier (active low)
     gpio_set_direction(ENTRY_LIGHT_BARRIER_PIN, GPIO_MODE_OUTPUT);
-    gpio_set_level(ENTRY_LIGHT_BARRIER_PIN, 0);  // Block
+    gpio_set_level(ENTRY_LIGHT_BARRIER_PIN, 0); // Block
     vTaskDelay(pdMS_TO_TICKS(200));
 
     TEST_ASSERT_EQUAL(EntryGateState::CarPassing, controller.getState());
 
     // Car clears barrier
-    gpio_set_level(ENTRY_LIGHT_BARRIER_PIN, 1);  // Clear
+    gpio_set_level(ENTRY_LIGHT_BARRIER_PIN, 1); // Clear
     gpio_set_direction(ENTRY_LIGHT_BARRIER_PIN, GPIO_MODE_INPUT);
 
     // Wait for safety delay (2 sec) + barrier close
@@ -145,8 +140,7 @@ TEST_CASE("Complete entry cycle", "[entry][hw][slow]")
 /**
  * Test: Parking full rejection
  */
-TEST_CASE("Parking full rejects entry", "[entry][hw][capacity]")
-{
+TEST_CASE("Parking full rejects entry", "[entry][hw][capacity]") {
     auto& ticketService = g_system->getTicketService();
     auto& controller = g_system->getEntryGate();
 

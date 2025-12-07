@@ -21,7 +21,7 @@
  * - Controllers receive references to: EventBus, Gate, TicketService
  */
 class ParkingGarageSystem {
-public:
+  public:
     /**
      * @brief Construct parking system
      * @param config System configuration
@@ -73,7 +73,7 @@ public:
      */
     void getStatus(char* buffer, size_t bufferSize) const;
 
-private:
+  private:
     // Event bus (must be first - other components depend on it)
     std::unique_ptr<FreeRtosEventBus> m_eventBus;
 

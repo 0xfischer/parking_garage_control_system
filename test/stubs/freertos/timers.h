@@ -11,20 +11,20 @@ typedef struct TimerStub {
     void* id;
     TickType_t period_ticks;
     BaseType_t auto_reload;
-} *TimerHandle_t;
+}* TimerHandle_t;
 
 typedef void (*TimerCallbackFunction_t)(TimerHandle_t xTimer);
 
 static inline TimerHandle_t xTimerCreate(const char* /*pcTimerName*/, TickType_t xTimerPeriodInTicks,
                                          BaseType_t uxAutoReload, void* pvTimerID,
-                                         TimerCallbackFunction_t /*pxCallbackFunction*/)
-{
+                                         TimerCallbackFunction_t /*pxCallbackFunction*/) {
     TimerHandle_t h = new TimerStub{pvTimerID, xTimerPeriodInTicks, uxAutoReload};
     return h;
 }
 
 static inline void vTimerSetTimerID(TimerHandle_t xTimer, void* id) {
-    if (xTimer) xTimer->id = id;
+    if (xTimer)
+        xTimer->id = id;
 }
 
 static inline void* pvTimerGetTimerID(TimerHandle_t xTimer) {

@@ -20,11 +20,10 @@ void test_exit_full_cycle() {
     // Pre-create one active PAID ticket (ID=1)
     uint32_t id = tickets.getNewTicket();
     assert(id == 1);
-    tickets.payTicket(id);  // Pay the ticket!
+    tickets.payTicket(id); // Pay the ticket!
 
     ExitGateController controller(
-        eventBus, gate, tickets, 100, 50
-    );
+        eventBus, gate, tickets, 100, 50);
 
     // Initial state
     assert(controller.getState() == ExitGateState::Idle);
@@ -46,7 +45,7 @@ void test_exit_full_cycle() {
     eventBus.processAllPending();
     assert(controller.getState() == ExitGateState::CarPassing);
 
-    eventBus.publish(Event(EventType::ExitLightBarrierCleared));  // cleared -> car left
+    eventBus.publish(Event(EventType::ExitLightBarrierCleared)); // cleared -> car left
     eventBus.processAllPending();
     assert(controller.getState() == ExitGateState::WaitingBeforeClose);
 
@@ -70,12 +69,11 @@ void test_exit_no_tickets_rejected() {
     MockTicketService tickets(5);
 
     ExitGateController controller(
-        eventBus, gate, tickets, 100, 10
-    );
+        eventBus, gate, tickets, 100, 10);
 
     // Try to validate non-existent ticket
     bool validated = controller.validateTicketManually(99);
-    assert(!validated);  // Should fail
+    assert(!validated); // Should fail
     eventBus.processAllPending();
 
     // Should return to Idle (rejected)
@@ -96,15 +94,14 @@ void test_exit_unpaid_ticket_rejected() {
     uint32_t id = tickets.getNewTicket(); // ID=1
     Ticket ticket;
     bool found = tickets.getTicketInfo(id, ticket);
-    assert(found && !ticket.isPaid);  // Verify unpaid
+    assert(found && !ticket.isPaid); // Verify unpaid
 
     ExitGateController controller(
-        eventBus, gate, tickets, 100, 50
-    );
+        eventBus, gate, tickets, 100, 50);
 
     // Try to validate unpaid ticket
     bool validated = controller.validateTicketManually(id);
-    assert(!validated);  // Should fail - ticket not paid
+    assert(!validated); // Should fail - ticket not paid
     eventBus.processAllPending();
 
     // Should return to Idle
@@ -114,7 +111,10 @@ void test_exit_unpaid_ticket_rejected() {
     // Ensure no ExitBarrierOpened event
     bool openedEvent = false;
     for (const auto& ev : eventBus.history()) {
-        if (ev.type == EventType::ExitBarrierOpened) { openedEvent = true; break; }
+        if (ev.type == EventType::ExitBarrierOpened) {
+            openedEvent = true;
+            break;
+        }
     }
     assert(!openedEvent && "ExitBarrierOpened should not be published for unpaid ticket");
 
@@ -133,8 +133,7 @@ void test_exit_light_barrier_in_idle_ignored() {
     tickets.payTicket(id);
 
     ExitGateController controller(
-        eventBus, gate, tickets, 100, 10
-    );
+        eventBus, gate, tickets, 100, 10);
 
     // Initial state
     assert(controller.getState() == ExitGateState::Idle);

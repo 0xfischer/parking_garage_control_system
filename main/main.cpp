@@ -70,7 +70,6 @@ extern "C" void app_main(void) {
     esp_log_level_set("console_commands", ESP_LOG_INFO);
     esp_log_level_set("EventBus", ESP_LOG_INFO);
 
-
     // Get configuration from Kconfig
     ParkingGarageConfig config = ParkingGarageConfig::fromKconfig();
 
@@ -87,11 +86,10 @@ extern "C" void app_main(void) {
     xTaskCreate(
         event_loop_task,
         "event_loop",
-        4096,  // Stack size
+        4096, // Stack size
         g_parkingSystem,
-        5,  // Priority (normal)
-        nullptr
-    );
+        5, // Priority (normal)
+        nullptr);
 
 #ifdef CONFIG_PARKING_CONSOLE_ENABLED
     // Initialize console commands

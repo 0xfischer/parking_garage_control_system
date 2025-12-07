@@ -6,17 +6,16 @@ static const char* TAG = "EspServoOutput";
 EspServoOutput::EspServoOutput(gpio_num_t pin, ledc_channel_t ledcChannel, bool initialLevel)
     : m_pin(pin)
     , m_channel(ledcChannel)
-    , m_currentLevel(initialLevel)
-{
+    , m_currentLevel(initialLevel) {
     // Configure LEDC timer for servo PWM (50Hz)
     ledc_timer_config_t timer_conf = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
-        .duty_resolution = LEDC_TIMER_14_BIT,  // 14-bit resolution for precise control
+        .duty_resolution = LEDC_TIMER_14_BIT, // 14-bit resolution for precise control
         .timer_num = LEDC_TIMER_0,
         .freq_hz = SERVO_FREQ_HZ,
         .clk_cfg = LEDC_AUTO_CLK,
         .deconfigure = 0
-        
+
     };
 
     esp_err_t ret = ledc_timer_config(&timer_conf);
@@ -35,9 +34,7 @@ EspServoOutput::EspServoOutput(gpio_num_t pin, ledc_channel_t ledcChannel, bool 
         .duty = 0,
         .hpoint = 0,
         .flags = {
-            .output_invert = 0
-        }
-    };
+            .output_invert = 0}};
 
     ret = ledc_channel_config(&channel_conf);
     if (ret != ESP_OK) {
@@ -68,7 +65,7 @@ void EspServoOutput::setLevel(bool high) {
     ESP_LOGD(TAG, "Servo GPIO %d: %s (angle: %lu°)",
              m_pin,
              high ? "OPEN" : "CLOSED",
-             (unsigned long)(high ? SERVO_ANGLE_OPEN : SERVO_ANGLE_CLOSED));
+             (unsigned long) (high ? SERVO_ANGLE_OPEN : SERVO_ANGLE_CLOSED));
 }
 
 bool EspServoOutput::getLevel() const {

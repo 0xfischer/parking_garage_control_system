@@ -5,11 +5,11 @@
 
 // Concrete Implementation for ESP32 GPIO
 class Esp32Gpio : public IGpioOutput {
-public:
+  public:
     void setLevel(bool level) override;
     bool getLevel() const override;
 
-private:
+  private:
     bool currentLevel = false;
 };
 

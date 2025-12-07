@@ -9,7 +9,7 @@
  * Enables testability through mock implementations.
  */
 class IGpioInput {
-public:
+  public:
     virtual ~IGpioInput() = default;
 
     /**

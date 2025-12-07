@@ -8,8 +8,9 @@
  * Stores output level for verification in tests.
  */
 class MockGpioOutput : public IGpioOutput {
-public:
-    MockGpioOutput() : m_level(false) {}
+  public:
+    MockGpioOutput()
+        : m_level(false) {}
 
     void setLevel(bool high) override {
         m_level = high;
@@ -19,6 +20,6 @@ public:
         return m_level;
     }
 
-private:
+  private:
     bool m_level;
 };

@@ -14,7 +14,7 @@
  * Supports both asynchronous event publishing and synchronous event processing.
  */
 class FreeRtosEventBus : public IEventBus {
-public:
+  public:
     /**
      * @brief Construct event bus
      * @param queueSize Maximum number of queued events
@@ -38,7 +38,7 @@ public:
      */
     bool publishFromISR(const Event& event);
 
-private:
+  private:
     void dispatchEvent(const Event& event);
 
     QueueHandle_t m_queue;

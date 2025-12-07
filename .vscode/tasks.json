@@ -1,0 +1,176 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build - IDF",
+            "type": "shell",
+            "command": ". ${env:HOME}/esp@5.2/v5.2.2/esp-idf/export.sh > /dev/null 2>&1 && idf.py build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": "absolute",
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Flash - IDF",
+            "type": "shell",
+            "command": ". ${env:HOME}/esp@5.2/v5.2.2/esp-idf/export.sh > /dev/null 2>&1 && idf.py flash",
+            "group": "build",
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Monitor - IDF",
+            "type": "shell",
+            "command": ". ${env:HOME}/esp@5.2/v5.2.2/esp-idf/export.sh > /dev/null 2>&1 && idf.py monitor",
+            "group": "test",
+            "problemMatcher": [],
+            "isBackground": true,
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Build + Flash + Monitor",
+            "type": "shell",
+            "command": ". ${env:HOME}/esp@5.2/v5.2.2/esp-idf/export.sh > /dev/null 2>&1 && idf.py build flash monitor",
+            "group": "test",
+            "problemMatcher": [],
+            "isBackground": true,
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Clean - IDF",
+            "type": "shell",
+            "command": ". ${env:HOME}/esp@5.2/v5.2.2/esp-idf/export.sh > /dev/null 2>&1 && idf.py fullclean",
+            "group": "build",
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "OpenOCD - ESP32",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f", "board/esp32-wrover-kit-3.3v.cfg"
+            ],
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": ".",
+                    "file": 1,
+                    "location": 2,
+                    "message": 3
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "."
+                }
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Start Wokwi GDB",
+            "type": "shell",
+            "command": "wokwi-server",
+            "args": [
+                "--gdb"
+            ],
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": ".",
+                    "file": 1,
+                    "location": 2,
+                    "message": 3
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "GDB server started on port"
+                }
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Lint - build compile_commands",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["-S", ".", "-B", "build", "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"],
+            "problemMatcher": []
+        },
+        {
+            "label": "Lint - format",
+            "type": "shell",
+            "command": "find . -type f \\( -name \"*.c\" -o -name \"*.cpp\" -o -name \"*.h\" -o -name \"*.hpp\" \\) -not -path \"./build/*\" -not -path \"./bootloader/*\" -not -path \"./esp-idf/*\" -print0 | xargs -0 clang-format -i",
+            "problemMatcher": []
+        },
+        {
+            "label": "Lint - gen tidy db",
+            "type": "shell",
+            "command": "python3 tools/gen_tidy_compile_commands.py",
+            "problemMatcher": []
+        },
+        {
+            "label": "Lint - tidy",
+            "type": "shell",
+            "command": "git ls-files | grep -E '\\.(c|cpp|h|hpp)$' | grep -v '^build/' | grep -v '^bootloader/' | grep -v '^esp-idf/' | xargs -I{} run-clang-tidy -p build/compile_commands_tidy -header-filter='^(main|components|examples|test)/' {}",
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Lint - tidy (changed)",
+            "type": "shell",
+            "command": "git ls-files | grep -E '\\.(c|cpp|h|hpp)$' | grep -v '^build/' | grep -v '^bootloader/' | grep -v '^esp-idf/' | xargs -I{} clang-tidy -p build/compile_commands_tidy {}",
+            "problemMatcher": ["$gcc"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        }
+    ]
+}

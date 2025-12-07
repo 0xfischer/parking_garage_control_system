@@ -2,6 +2,23 @@
 
 Event-driven parking garage control system for ESP32 using ESP-IDF and FreeRTOS.
 
+![Build](https://github.com/0xfischer/parking_garage_control_system/actions/workflows/build.yml/badge.svg)
+![Format](https://github.com/0xfischer/parking_garage_control_system/actions/workflows/format.yml/badge.svg)
+![Docs](https://github.com/0xfischer/parking_garage_control_system/actions/workflows/docs.yml/badge.svg)
+![Coverage](https://github.com/0xfischer/parking_garage_control_system/actions/workflows/coverage.yml/badge.svg)
+[![Releases](https://img.shields.io/github/v/release/0xfischer/parking_garage_control_system?label=release)](https://github.com/0xfischer/parking_garage_control_system/releases)
+
+## Dokumentation
+
+- Projekt-Dokumentation wird via Doxygen generiert und nach `gh-pages` veröffentlicht.
+- Aktivieren Sie GitHub Pages in den Repo-Einstellungen (Quelle: `gh-pages`).
+- Link: https://0xfischer.github.io/parking_garage_control_system/
+
+## Releases
+
+- Getaggte Versionen (`vX.Y.Z`) erzeugen automatisch ein Release mit Artefakten.
+- Changelog: siehe `CHANGELOG.md`.
+
 ## Features
 
 - **Event-Driven Architecture**: GPIO interrupts trigger events processed by state machines
@@ -198,6 +215,53 @@ stateDiagram-v2
 **Events/Commands**:
 - `ticket_validate <id>` → Start validation (manual command)
 - `TicketValidated` → Ticket is paid, proceed
+
+## Lint & Format
+
+- Tools:
+    - `clang-format`: sorgt für konsistente Formatierung.
+    - `clang-tidy`: optionale statische Analyse (aktuell manuell deaktiviert).
+
+- Konfigurationsdateien:
+    - `.clang-format` (LLVM-basiert, minimaler Diff zum bestehenden Stil)
+    - `.clang-tidy` (Analyzer/Bugprone/Readability/Modernize/Performance; einige laute Checks deaktiviert)
+
+- VS Code Tasks:
+    - `Lint - build compile_commands`: erzeugt `build/compile_commands.json`.
+    - `Lint - gen tidy db`: generiert gefilterte `build/compile_commands_tidy/compile_commands.json` für `clang-tidy`.
+    - `Lint - format`: formatiert alle Projektdateien (exkl. `build/`, `bootloader/`, `esp-idf/`).
+    - `Lint - tidy`: führt `run-clang-tidy` auf allen Projektdateien aus (nutzt die gefilterte DB).
+    - `Lint - tidy (changed)`: führt `clang-tidy` nur auf geänderten Projektdateien aus.
+
+- Git Hooks:
+    - `pre-commit`: prüft Format (`clang-format --dry-run --Werror`) auf gestagten Dateien.
+    - `pre-push`: `clang-tidy` ist standardmäßig deaktiviert. Aktivieren mit `ENABLE_TIDY=1` beim Push.
+        - Beispiel: `ENABLE_TIDY=1 git push`
+
+- CI (GitHub Actions):
+    - `.github/workflows/lint.yml`: `clang-format` aktiv; `clang-tidy` ist deaktiviert.
+    - `.github/workflows/tidy.yml`: manueller Workflow (Actions → "Run workflow"), führt `clang-tidy` bei Bedarf aus.
+
+- Docker
+    - `Dockerfile` stellt Tooling bereit (clang-format, clang-tidy, cmake, python3, git). `ENABLE_TIDY=0` per Default.
+    - Nutzung:
+        ```zsh
+        docker build -t pgcs-tools .
+        docker run --rm -it -v "$PWD":/workspace pgcs-tools bash
+        # Im Container
+        cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        python3 tools/gen_tidy_compile_commands.py
+        run-clang-tidy -p build/compile_commands_tidy -header-filter='^(main|components|examples|test)/' -j $(nproc)
+        ```
+
+### Schnellstart lokal
+```zsh
+# Formatieren
+# VS Code Task: "Lint - format"
+
+# Tidy optional (manuell)
+# VS Code Task: "Lint - gen tidy db" → "Lint - tidy"
+```
 - `TicketRejected` → Ticket unpaid or invalid, deny exit
 - `ExitLightBarrierBlocked` → Car enters barrier area
 - `ExitLightBarrierCleared` → Car exited

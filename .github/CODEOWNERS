@@ -1,0 +1,6 @@
+# Code owners for directories
+* @0xfischer
+components/ @0xfischer
+main/ @0xfischer
+test/ @0xfischer
+examples/ @0xfischer

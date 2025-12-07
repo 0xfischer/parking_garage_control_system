@@ -1,0 +1,40 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  esp-idf-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache ESP-IDF tools
+        uses: actions/cache@v4
+        with:
+            path: ~/.espressif
+            key: ${{ runner.os }}-espressif-${{ hashFiles('**/sdkconfig', '**/sdkconfig.defaults') }}
+            restore-keys: |
+              ${{ runner.os }}-espressif-
+
+      - name: Setup ESP-IDF (Docker)
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.2.2
+
+      - name: Build
+        run: |
+          idf.py build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32-build
+          path: |
+            build/*.bin
+            build/*.elf
+            build/partition_table/*.csv

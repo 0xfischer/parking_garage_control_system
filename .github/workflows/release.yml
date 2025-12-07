@@ -1,0 +1,104 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang-format clang-tidy doxygen graphviz
+
+      - name: Configure (host tests)
+        run: |
+          cmake -S test -B build-test -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (host tests)
+        run: |
+          cmake --build build-test --config Release
+
+      - name: Archive artifacts
+        run: |
+          mkdir -p artifacts
+          cp -r build-test artifacts/build-test || true
+          # If firmware elf/bin exists, include from ESP-IDF build
+          if [ -f build/parking_garage_control_system.elf ]; then cp build/parking_garage_control_system.elf artifacts/; fi
+          if ls build/*.bin >/dev/null 2>&1; then cp build/*.bin artifacts/ || true; fi
+
+      - name: Prepare release notes from CHANGELOG
+        id: changelog
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          {
+            echo "## ${TAG}"
+            # Extract section between header [TAG] and next header starting with '## ['
+            awk -v tag="$TAG" 'BEGIN{found=0} \
+              /^## \[/ { \
+                if(found){exit} \
+              } \
+              { \
+                if($0 ~ "^## \[" tag "\]"){found=1; next} \
+                if(found){print} \
+              }' CHANGELOG.md | sed '/^\s*$/q'
+          } > RELEASE_NOTES.md || true
+          echo "Notes generated:" && head -n 50 RELEASE_NOTES.md || true
+          echo "release_body<<EOF" >> $GITHUB_OUTPUT
+          cat RELEASE_NOTES.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**
+          generate_release_notes: false
+          body: ${{ steps.changelog.outputs.release_body }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  firmware-build:
+    name: Build Firmware (ESP-IDF)
+    runs-on: ubuntu-24.04
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.2
+          target: esp32
+
+      - name: Build firmware
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py build
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: |
+            build/*.bin
+            build/*.elf
+            build/*.map
+            build/flasher_args.json

@@ -1,0 +1,42 @@
+name: Tidy (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      enable:
+        description: "Run clang-tidy (set to true)"
+        type: boolean
+        default: true
+
+jobs:
+  tidy:
+    if: ${{ inputs.enable }}
+    name: clang-tidy manual run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy python3 cmake
+
+      - name: Generate filtered compile_commands (optional)
+        run: |
+          cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON || true
+          if [ -f tools/gen_tidy_compile_commands.py ]; then
+            python3 tools/gen_tidy_compile_commands.py || true
+          fi
+
+      - name: Run clang-tidy on project files
+        run: |
+          set -euo pipefail
+          DB_DIR="build/compile_commands_tidy"
+          if [ ! -f "$DB_DIR/compile_commands.json" ]; then
+            echo "No filtered DB found; falling back to build/"
+            DB_DIR="build"
+          fi
+          git ls-files | grep -E '\\.(c|cpp|h|hpp)$' \
+            | grep -v '^build/' | grep -v '^bootloader/' | grep -v '^esp-idf/' \
+            | xargs -I{} clang-tidy -p "$DB_DIR" {}

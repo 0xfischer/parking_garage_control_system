@@ -1,0 +1,54 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  format:
+    name: clang-format check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+
+      - name: Run clang-format (dry-run, fail on diff)
+        run: |
+          set -euo pipefail
+          find . -type f \( -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \) \
+            -not -path "./build/*" -not -path "./bootloader/*" -not -path "./esp-idf/*" -print0 \
+            | xargs -0 -I{} clang-format --dry-run --Werror {}
+
+  tidy:
+    if: ${{ false }}
+    name: clang-tidy (disabled)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install clang-tidy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy
+
+      - name: Try run clang-tidy when compile_commands.json is available
+        run: |
+          set -euo pipefail
+          if [ -f build/compile_commands.json ]; then
+            echo "compile_commands.json found; running clang-tidy"
+            # Run across tracked C/C++ files, excluding generated/vendor paths
+            git ls-files | grep -E '\\.(c|cpp|h|hpp)$' \
+              | grep -v '^build/' | grep -v '^bootloader/' | grep -v '^esp-idf/' \
+              | xargs -I{} clang-tidy -p build {} || true
+          else
+            echo "No build/compile_commands.json; skipping clang-tidy"
+          fi
+        shell: bash

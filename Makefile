@@ -31,7 +31,7 @@ test-wokwi:
 test-wokwi-full:
 	wokwi-cli --scenario test/wokwi/console_full.yaml
 	wokwi-cli --scenario test/wokwi/entry_exit_flow.yaml
-	wokwi-cli --scenario test/wokwi/full_capacity.yaml
+	wokwi-cli --scenario test/wokwi/parking_full.yaml
 
 
 format-check:

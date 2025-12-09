@@ -6,40 +6,53 @@ on:
       - "v*"
 
 jobs:
-  build-and-release:
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-      packages: read
+  firmware-build:
+    name: Build Firmware (ESP-IDF)
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Build firmware (inside devcontainer image)
+        run: make build-local
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
         with:
-          python-version: "3.x"
+          name: firmware
+          path: build/
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build clang-format clang-tidy doxygen graphviz
+  build-and-release:
+    name: Build Host Tests and Create Release
+    needs: firmware-build
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Configure (host tests)
-        run: |
-          cmake -S test -B build-test -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Download firmware artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware
+          path: build/
 
-      - name: Build (host tests)
-        run: |
-          cmake --build build-test --config Release
+      - name: Build host tests (inside devcontainer image)
+        run: make test-local
 
-      - name: Archive artifacts
+      - name: Archive all artifacts
         run: |
-          mkdir -p artifacts
-          cp -r build-test artifacts/build-test || true
-          # If firmware elf/bin exists, include from ESP-IDF build
-          if [ -f build/parking_garage_control_system.elf ]; then cp build/parking_garage_control_system.elf artifacts/; fi
-          if ls build/*.bin >/dev/null 2>&1; then cp build/*.bin artifacts/ || true; fi
+          mkdir -p release_artifacts
+          cp -r build-host release_artifacts/
+          cp build/partition_table/partition-table.bin release_artifacts/
+          cp build/bootloader/bootloader.bin release_artifacts/
+          cp build/parking_garage_control_system.bin release_artifacts/
+          cp build/parking_garage_control_system.elf release_artifacts/
 
       - name: Prepare release notes from CHANGELOG
         id: changelog
@@ -57,48 +70,14 @@ jobs:
                 if($0 ~ "^## \[" tag "\]"){found=1; next} \
                 if(found){print} \
               }' CHANGELOG.md | sed '/^\s*$/q'
-          } > RELEASE_NOTES.md || true
-          echo "Notes generated:" && head -n 50 RELEASE_NOTES.md || true
+          } > release_artifacts/RELEASE_NOTES.md || true
+          echo "Notes generated:" && head -n 50 release_artifacts/RELEASE_NOTES.md || true
           echo "release_body<<EOF" >> $GITHUB_OUTPUT
-          cat RELEASE_NOTES.md >> $GITHUB_OUTPUT
+          cat release_artifacts/RELEASE_NOTES.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            artifacts/**
-          generate_release_notes: false
+          files: release_artifacts/*
           body: ${{ steps.changelog.outputs.release_body }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  firmware-build:
-    name: Build Firmware (ESP-IDF)
-    runs-on: ubuntu-24.04
-    if: startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup ESP-IDF
-        uses: espressif/esp-idf-ci-action@v1
-        with:
-          esp_idf_version: v5.2
-          target: esp32
-
-      - name: Build firmware
-        shell: bash
-        run: |
-          . $IDF_PATH/export.sh
-          idf.py build
-
-      - name: Upload firmware artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: firmware
-          path: |
-            build/*.bin
-            build/*.elf
-            build/*.map
-            build/flasher_args.json

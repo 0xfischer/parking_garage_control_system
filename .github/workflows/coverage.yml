@@ -2,40 +2,24 @@ name: Coverage
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
-  host-tests-coverage:
+  coverage:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake gcc g++ lcov gcovr
-
-      - name: Configure host test build
-        run: |
-          cmake -S test -B build-host -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON || true
-
-      - name: Build & run tests
-        run: |
-          cmake --build build-host || true
-          ctest --test-dir build-host --output-on-failure || true
-
-      - name: Generate coverage report
-        run: |
-          gcovr -r . --xml -o coverage.xml || true
-          gcovr -r . --html --html-details -o coverage.html || true
+      - name: Generate coverage report (inside devcontainer image)
+        run: make coverage-run
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: |
-            coverage.xml
-            coverage.html
+          path: build-host/coverage.html

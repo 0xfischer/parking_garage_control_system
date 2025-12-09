@@ -2,31 +2,20 @@ name: Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
-  esp-idf-build:
+  build:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache ESP-IDF tools
-        uses: actions/cache@v4
-        with:
-            path: ~/.espressif
-            key: ${{ runner.os }}-espressif-${{ hashFiles('**/sdkconfig', '**/sdkconfig.defaults') }}
-            restore-keys: |
-              ${{ runner.os }}-espressif-
-
-      - name: Setup ESP-IDF (Docker)
-        uses: espressif/esp-idf-ci-action@v1
-        with:
-          esp_idf_version: v5.2.2
-
-      - name: Build
+      - name: Build (inside devcontainer image)
         run: |
           idf.py build
 
@@ -38,3 +27,4 @@ jobs:
             build/*.bin
             build/*.elf
             build/partition_table/*.csv
+            build/flasher_args.json

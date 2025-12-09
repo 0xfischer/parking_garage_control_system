@@ -8,6 +8,31 @@ Event-driven parking garage control system for ESP32 using ESP-IDF and FreeRTOS.
 ![Coverage](https://github.com/0xfischer/parking_garage_control_system/actions/workflows/coverage.yml/badge.svg)
 [![Releases](https://img.shields.io/github/v/release/0xfischer/parking_garage_control_system?label=release)](https://github.com/0xfischer/parking_garage_control_system/releases)
 
+> Tipp: Lokales Testen von GitHub Actions findest du in `ACT.md`.
+
+## Devcontainer Release (GHCR)
+
+- Zweck: Das Devcontainer-Image aus `.devcontainer/Dockerfile` bauen und in die GitHub Container Registry (GHCR) pushen.
+- Script: `tools/release_devcontainer_to_github.sh` (ersetzt frühere `docker_*` Skripte).
+
+### Voraussetzungen
+- Docker CLI lauffähig (`docker info` ohne Fehler)
+- `GITHUB_TOKEN` mit `write:packages`-Recht gesetzt (z. B. in `.env`)
+
+### Beispiele
+```zsh
+# Push latest (amd64, buildx)
+GITHUB_TOKEN=ghp_xxx tools/release_devcontainer_to_github.sh
+
+# Mit Tag
+GITHUB_TOKEN=ghp_xxx tools/release_devcontainer_to_github.sh --tag v5.2.2
+
+# Alternative Image-/Owner-/Repo-Angabe
+GITHUB_TOKEN=ghp_xxx tools/release_devcontainer_to_github.sh \
+    --image ghcr.io/0xfischer/parking_garage_control_system-dev:latest \
+    --owner 0xfischer --repo parking_garage_control_system
+```
+
 ## Dokumentation
 
 - Projekt-Dokumentation wird via Doxygen generiert und nach `gh-pages` veröffentlicht.

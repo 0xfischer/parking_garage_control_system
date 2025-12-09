@@ -23,15 +23,7 @@ RUN if ! getent group $USER_GID >/dev/null; then groupadd --gid $USER_GID $CONTA
     && echo "$CONTAINER_USER ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$CONTAINER_USER \
     && chmod 0440 /etc/sudoers.d/$CONTAINER_USER
 
-# Wokwi CLI
-RUN wget -qO- https://wokwi.com/ci/install.sh | sh
-
-# act (benötigt Docker-CLI + /var/run/docker.sock im Devcontainer)
-RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | bash
-
-# pre-commit
-RUN pip3 install --no-cache-dir pre-commit
-
+# Zu User wechseln für Tool-Installationen
 USER ${CONTAINER_USER}
 ENV USER=${CONTAINER_USER}
 ENV HOME=/home/${CONTAINER_USER}
@@ -39,10 +31,25 @@ ENV PATH="$HOME/.local/bin:$PATH"
 
 WORKDIR /workspace
 
-# Git safe.directory und optionales IDF-Export in interaktiven Shells
-RUN /usr/bin/git config --global --add safe.directory /opt/esp/idf
-# Optional, EntryPoint setzt IDF-Umgebung ohnehin
-# RUN echo "source /opt/esp/idf/export.sh > /dev/null 2>&1" >> ~/.bashrc
+# Wokwi CLI (als User installieren)
+RUN wget -qO- https://wokwi.com/ci/install.sh | sh
+
+# act (install to /usr/local/bin so it's in PATH)
+RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- -b /usr/local/bin
+
+# pre-commit (als User installieren)
+RUN pip3 install --no-cache-dir --user pre-commit
+
+# Git safe.directory
+RUN git config --global --add safe.directory /opt/esp/idf \
+    && git config --global --add safe.directory /workspace
+
+# Ensure clean bashrc without old ESP-IDF paths
+RUN echo "" > ~/.bashrc \
+    && echo "# ESP-IDF Environment" >> ~/.bashrc \
+    && echo "export IDF_PATH=/opt/esp/idf" >> ~/.bashrc \
+    && echo "export IDF_TOOLS_PATH=/opt/esp" >> ~/.bashrc \
+    && echo "source \$IDF_PATH/export.sh > /dev/null 2>&1" >> ~/.bashrc
 
 ENTRYPOINT [ "/opt/esp/entrypoint.sh" ]
 CMD ["/bin/bash"]

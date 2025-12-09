@@ -2,9 +2,18 @@
 export
 
 .PHONY: test-local build-local format-check lint-check coverage-run act-test fullclean lint-tidy-db lint-tidy lint-tidy-changed wokwi-test wokwi-test-ci \
-	env-print env-example act-wokwi docker-release
+	env-print env-example act-wokwi docker-release init
 
 JOBS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
+
+init:
+	@if [ -z "$$IDF_PATH" ]; then \
+		echo "Error: IDF_PATH not set. Please set it to your ESP-IDF installation path."; \
+		echo "Example: export IDF_PATH=~/esp/esp-idf"; \
+		exit 1; \
+	fi; \
+	echo "Sourcing ESP-IDF environment from $$IDF_PATH/export.sh..."; \
+	. $$IDF_PATH/export.sh && echo "ESP-IDF environment initialized successfully"
 
 fullclean:
 	idf.py fullclean || true
@@ -35,8 +44,6 @@ lint-tidy-db:
 
 # clang-tidy auf allen Dateien (entspricht "Lint - tidy")
 lint-tidy: lint-tidy-db
-	cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-	python3 tools/gen_tidy_compile_commands.py
 	run-clang-tidy -p build/compile_commands_tidy -header-filter='^(main|components|examples|test)/' -j $(JOBS)
 
 # clang-tidy nur auf geänderten Dateien (entspricht "Lint - tidy (changed)")

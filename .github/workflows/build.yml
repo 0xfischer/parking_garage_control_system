@@ -16,8 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build (inside devcontainer image)
-        run: |
-          idf.py build
+        run: make build-local
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

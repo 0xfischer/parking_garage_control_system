@@ -30,3 +30,10 @@ test/test_*
 # Misc
 *.log
 .claude/settings.local
+
+# binaries (act)
+bin/
+
+.env
+.secrets
+build-host/

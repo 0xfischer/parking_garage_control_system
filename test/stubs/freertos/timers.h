@@ -11,7 +11,7 @@ typedef struct TimerStub {
     void* id;
     TickType_t period_ticks;
     BaseType_t auto_reload;
-}* TimerHandle_t;
+} * TimerHandle_t;
 
 typedef void (*TimerCallbackFunction_t)(TimerHandle_t xTimer);
 

@@ -8,7 +8,7 @@ extern "C" {
 
 typedef struct QueueStub {
     int dummy;
-}* QueueHandle_t;
+} * QueueHandle_t;
 
 static inline QueueHandle_t xQueueCreate(UBaseType_t /*uxQueueLength*/, UBaseType_t /*uxItemSize*/) {
     return new QueueStub{0};

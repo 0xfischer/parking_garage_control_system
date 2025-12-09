@@ -85,8 +85,12 @@ class ExitGateController {
 
 #ifdef UNIT_TEST
     // Test helpers to simulate timer expirations without FreeRTOS timers
-    void TEST_forceBarrierTimeout() { onBarrierTimeout(); }
-    void TEST_forceValidationTimeout() { onValidationTimeout(); }
+    void TEST_forceBarrierTimeout() {
+        onBarrierTimeout();
+    }
+    void TEST_forceValidationTimeout() {
+        onValidationTimeout();
+    }
 #endif
 
   private:

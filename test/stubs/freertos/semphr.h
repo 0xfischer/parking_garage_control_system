@@ -8,7 +8,7 @@ extern "C" {
 
 typedef struct SemaphoreStub {
     int dummy;
-}* SemaphoreHandle_t;
+} * SemaphoreHandle_t;
 
 static inline SemaphoreHandle_t xSemaphoreCreateMutex(void) {
     return new SemaphoreStub{0};

@@ -1,43 +1,11 @@
 #pragma once
 
-// Minimal FreeRTOS stub for clang-tidy and host builds.
-// Provides basic types and macros used by the project.
-
-#include <stdint.h>
-
-typedef void* TaskHandle_t;
-typedef void* QueueHandle_t;
-typedef void* SemaphoreHandle_t;
-
-typedef uint32_t TickType_t;
-
-#ifndef pdTRUE
-#define pdTRUE  (1)
-#endif
-#ifndef pdFALSE
-#define pdFALSE (0)
-#endif
-
-#ifndef portTICK_PERIOD_MS
-#define portTICK_PERIOD_MS (1)
-#endif
-
-#ifndef pdMS_TO_TICKS
-#define pdMS_TO_TICKS(ms) ((TickType_t)(ms))
-#endif
-
-#define configMINIMAL_STACK_SIZE (1024)
-
-// Forward include minimal stubs for queue and semaphore
-#include "freertos/queue.h"
-#include "freertos/semphr.h"
-#pragma once
-
 #include <cstdint>
 
 typedef int BaseType_t;
 typedef uint32_t UBaseType_t;
 typedef uint32_t TickType_t;
+typedef void* TaskHandle_t;
 
 #ifndef pdTRUE
 #define pdTRUE 1
@@ -54,6 +22,10 @@ typedef uint32_t TickType_t;
 #define portMAX_DELAY 0xFFFFFFFF
 #endif
 
+#ifndef portTICK_PERIOD_MS
+#define portTICK_PERIOD_MS (1)
+#endif
+
 #ifndef pdMS_TO_TICKS
 #define pdMS_TO_TICKS(ms) (static_cast<TickType_t>(ms))
 #endif
@@ -61,3 +33,5 @@ typedef uint32_t TickType_t;
 #ifndef portYIELD_FROM_ISR
 #define portYIELD_FROM_ISR(x) (void) (x)
 #endif
+
+#define configMINIMAL_STACK_SIZE (1024)

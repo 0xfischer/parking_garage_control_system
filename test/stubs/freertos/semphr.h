@@ -1,20 +1,5 @@
 #pragma once
 
-typedef void* SemaphoreHandle_t;
-
-static inline SemaphoreHandle_t xSemaphoreCreateMutex(void) {
-    return (SemaphoreHandle_t)0x1;
-}
-
-static inline int xSemaphoreTake(SemaphoreHandle_t s, unsigned int ticks) {
-    (void)s; (void)ticks; return 1; // pdTRUE
-}
-
-static inline int xSemaphoreGive(SemaphoreHandle_t s) {
-    (void)s; return 1; // pdTRUE
-}
-#pragma once
-
 #include "freertos/FreeRTOS.h"
 
 #ifdef __cplusplus

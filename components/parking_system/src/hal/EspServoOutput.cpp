@@ -11,8 +11,8 @@ EspServoOutput::EspServoOutput(gpio_num_t pin, ledc_channel_t ledcChannel, bool 
     ledc_timer_config_t timer_conf = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .duty_resolution = LEDC_TIMER_14_BIT, // 14-bit resolution for precise control
-        .timer_num = LEDC_TIMER_0,
         .freq_hz = SERVO_FREQ_HZ,
+        .timer_num = LEDC_TIMER_0,
         .clk_cfg = LEDC_AUTO_CLK,
         .deconfigure = 0
 

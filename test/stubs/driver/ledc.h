@@ -55,6 +55,7 @@ typedef struct {
     uint32_t freq_hz;
     ledc_timer_t timer_num;
     ledc_clk_cfg_t clk_cfg;
+    bool deconfigure;
 } ledc_timer_config_t;
 
 // LEDC channel configuration
@@ -66,6 +67,9 @@ typedef struct {
     ledc_timer_t timer_sel;
     uint32_t duty;
     int hpoint;
+    union {
+        uint32_t output_invert;
+    } flags;
 } ledc_channel_config_t;
 
 // LEDC functions (stubs)

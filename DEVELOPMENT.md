@@ -264,6 +264,37 @@ gh workflow run tidy.yml
 gh workflow run wokwi-tests.yml
 ```
 
+### Managing Workflow Runs
+
+Delete failed workflow runs to keep your Actions history clean:
+
+```bash
+# Delete all failed runs
+gh run list --status=failure --json databaseId --jq '.[].databaseId' | \
+  xargs -I{} gh run delete {}
+
+# Delete failed runs for specific workflow
+gh run list --workflow=build.yml --status=failure --json databaseId --jq '.[].databaseId' | \
+  xargs -I{} gh run delete {}
+
+# Delete all failed runs across all workflows in this project
+for workflow in build.yml coverage.yml format.yml tidy.yml docs.yml wokwi-tests.yml release.yml
+do
+  echo "Deleting failed runs for $workflow..."
+  gh run list --workflow=$workflow --status=failure --json databaseId --jq '.[].databaseId' | \
+    xargs -I{} gh run delete {} 2>/dev/null || true
+done
+
+# List failed runs before deleting (to review)
+gh run list --status=failure --json databaseId,displayTitle,conclusion
+
+# Delete with limit (e.g., last 50 failed runs)
+gh run list --status=failure --limit 50 --json databaseId --jq '.[].databaseId' | \
+  xargs -I{} gh run delete {}
+```
+
+**Note:** Deleted workflow runs cannot be recovered. The logs and artifacts are permanently removed.
+
 ## Devcontainer
 
 ### Devcontainer Image

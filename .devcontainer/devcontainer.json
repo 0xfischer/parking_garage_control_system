@@ -1,6 +1,6 @@
 {
   "name": "ESP-IDF",
-  "image": "espressif/idf:v5.1",
+  "build": { "dockerfile": "Dockerfile" },
   "workspaceFolder": "/workspace",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
   "customizations": {
@@ -8,28 +8,53 @@
       "extensions": [
         "ms-vscode.cpptools",
         "ms-vscode.cmake-tools",
-        "espressif.esp-idf-extension"
+        "espressif.esp-idf-extension",
+        "Wokwi.wokwi-vscode"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",
         "idf.espIdfPath": "/opt/esp/idf",
         "idf.toolsPath": "/opt/esp",
-        "idf.pythonBinPath": "/opt/esp/python_env/idf5.1_py3.8_env/bin/python",
-        "C_Cpp.default.compilerPath": "/opt/esp/tools/xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf/bin/xtensa-esp32-elf-g++",
+        "idf.gitPath": "/usr/bin/git",
+        "idf.pythonBinPath": "/opt/esp/python_env/idf5.2_py3.12_env/bin/python3",
+        "C_Cpp.default.compilerPath": "/opt/esp/tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin/xtensa-esp32-elf-g++",
         "C_Cpp.default.cStandard": "c11",
-        "C_Cpp.default.cppStandard": "c++17",
+        "C_Cpp.default.cppStandard": "c++20",
         "C_Cpp.default.includePath": [
           "${workspaceFolder}/**",
           "/opt/esp/idf/components/**"
         ]
       }
-    }
+    },
+    "codespaces": {
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"idf.espIdfPath": "/opt/esp/idf",
+				"idf.customExtraPaths": "",
+				"idf.pythonBinPath": "/opt/esp/python_env/idf5.2_py3.12_env/bin/python3",
+				"idf.toolsPath": "/opt/esp",
+				"idf.gitPath": "/usr/bin/git"
+			},
+			"extensions": [
+				"ms-vscode.cpptools",
+				"espressif.esp-idf-extension",
+				"platformio.platformio-ide",
+        "Wokwi.wokwi-vscode"
+			]
   },
   "runArgs": [
     "--privileged",
-    "-v",
-    "/dev:/dev"
+    "-v", "/dev:/dev",
+    "-v", "/var/run/docker.sock:/var/run/docker.sock"
   ],
-  "postCreateCommand": ". /opt/esp/idf/export.sh",
-  "remoteUser": "root"
+   "containerEnv": {
+    "LC_ALL": "C.UTF-8",
+    "LANG": "C.UTF-8"
+  },
+  "postCreateCommand": "source /opt/esp/idf/export.sh",
+  "remoteUser": "develop",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+      "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  }
 }

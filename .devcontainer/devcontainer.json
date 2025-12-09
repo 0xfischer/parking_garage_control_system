@@ -59,7 +59,9 @@
     "LC_ALL": "C.UTF-8",
     "LANG": "C.UTF-8",
     "IDF_PATH": "/opt/esp/idf",
-    "IDF_TOOLS_PATH": "/opt/esp"
+    "IDF_TOOLS_PATH": "/opt/esp",
+    "TERM": "xterm-256color",
+    "COLORTERM": "truecolor"
   },
   "remoteUser": "develop",
   "features": {

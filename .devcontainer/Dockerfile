@@ -40,9 +40,10 @@ RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sud
 # pre-commit (als User installieren)
 RUN pip3 install --no-cache-dir --user pre-commit
 
-# Git safe.directory
+# Git safe.directory and editor configuration
 RUN git config --global --add safe.directory /opt/esp/idf \
-    && git config --global --add safe.directory /workspace
+    && git config --global --add safe.directory /workspace \
+    && git config --global core.editor "vim"
 
 # Ensure clean bashrc without old ESP-IDF paths
 RUN echo "" > ~/.bashrc \

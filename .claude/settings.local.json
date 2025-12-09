@@ -32,7 +32,16 @@
       "Bash(find:*)",
       "Bash(./test/bin_test_console_workflow)",
       "Bash(test/test_entry_gate.cpp )",
-      "Bash(test/test_exit_gate.cpp )"
+      "Bash(test/test_exit_gate.cpp )",
+      "Bash(docker run:*)",
+      "Bash(echo:*)",
+      "Bash(git config:*)",
+      "Bash(for file in coverage.yml format.yml tidy.yml docs.yml wokwi-tests.yml release.yml)",
+      "Bash(do)",
+      "Bash(if grep -q \"image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest\" \"$file\")",
+      "Bash(then)",
+      "Bash(fi)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

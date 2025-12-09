@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
-      options: --user develop
+      options: --user root
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}

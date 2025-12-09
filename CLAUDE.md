@@ -296,15 +296,53 @@ void TEST_forceValidationTimeout(); // For ExitGateController
 
 ### Wokwi Simulation
 Test scenarios in `test/wokwi/`:
-- `entry_flow.yaml` - Complete entry sequence
-- `exit_flow.yaml` - Complete exit with paid ticket
-- `parking_full.yaml` - Capacity rejection test
+- `console_full.yaml` - Complete entry + payment + exit via console commands
+- `entry_exit_flow.yaml` - Hardware button + light barrier flow
+- `parking_full.yaml` - Capacity rejection test (requires longer timeout)
 
 Run locally:
 ```bash
 idf.py build
-wokwi-cli --scenario test/wokwi/entry_flow.yaml
+wokwi-cli --scenario test/wokwi/console_full.yaml --timeout 60000
 ```
+
+Run all Wokwi tests:
+```bash
+make test-wokwi-full
+```
+
+### Test Coverage
+
+Generate coverage reports:
+```bash
+# Via Makefile (recommended)
+make coverage-run
+
+# View HTML report
+open build-host/coverage.html
+
+# Manual with gcovr
+gcovr -r . --filter 'components/parking_system/src' --html -o coverage.html
+```
+
+Coverage files:
+- `build-host/coverage.html` - Detailed HTML report
+- `coverage/coverage.xml` - XML for CI integration
+
+Current coverage (Host-Tests with Mocks):
+- `EntryGateController.cpp`: ~84%
+- `ExitGateController.cpp`: ~81%
+- HAL/Services: 0% (Mocks replace real implementations)
+
+**Note**: ESP32 code coverage is not directly measurable (cross-compilation). Wokwi tests verify functionality but cannot collect coverage data.
+
+### Unity Hardware Tests
+
+Tests in `components/parking_system/test/`:
+- `test_entry_gate_hw.cpp` - Entry gate GPIO tests
+- `test_exit_gate_hw.cpp` - Exit gate GPIO tests
+
+These tests run on real ESP32 hardware or Wokwi simulation and test actual GPIO interactions.
 
 ### GitHub Actions CI
 - `.github/workflows/wokwi-tests.yml` - Wokwi simulation tests (manual trigger)

@@ -124,33 +124,72 @@ make test-local
 ### Test Coverage
 
 ```bash
-# Generate coverage report
+# Generate coverage report (builds tests with --coverage flags)
 make coverage-run
 
 # View coverage report
 open build-host/coverage.html
+
+# Generate XML for CI integration
+gcovr -r . --filter 'components/parking_system/src' --xml -o coverage.xml
 ```
+
+**Coverage Details:**
+- Host tests use Mocks for HAL/Services → only controller logic is covered
+- Current coverage: ~42% overall, ~84% for controllers
+- ESP32 coverage not measurable (cross-compilation)
+
+**Coverage Reports:**
+- `build-host/coverage.html` - HTML report with line-by-line details
+- `coverage/coverage.xml` - XML format for CI tools (Codecov, etc.)
 
 ### Wokwi Hardware Simulation
 
 Wokwi provides hardware-in-the-loop simulation:
 
 ```bash
-# Single test
+# Single test (entry_exit_flow)
 make test-wokwi
 
 # All tests
 make test-wokwi-full
 
-# Specific scenario
-wokwi-cli --scenario test/wokwi/entry_exit_flow.yaml
+# Specific scenario with timeout
+wokwi-cli --scenario test/wokwi/console_full.yaml --timeout 60000
 ```
 
 #### Available Test Scenarios
 
-- `console_full.yaml` - Complete console command tests
-- `entry_exit_flow.yaml` - Entry and exit gate flow
-- `full_capacity.yaml` - Parking full scenario
+| Scenario | Description | Status |
+|----------|-------------|--------|
+| `console_full.yaml` | Entry + payment + exit via console | ✅ Working |
+| `entry_exit_flow.yaml` | Hardware button + light barrier | ✅ Working |
+| `parking_full.yaml` | Capacity rejection test | ⚠️ Needs longer timeout |
+
+**Note:** Wokwi CLI is located at `/home/develop/bin/wokwi-cli` in the devcontainer.
+
+### Unity Hardware Tests (ESP32)
+
+Unity tests for real hardware validation:
+
+```bash
+# Tests location
+components/parking_system/test/
+├── test_entry_gate_hw.cpp   # Entry gate GPIO tests
+├── test_exit_gate_hw.cpp    # Exit gate GPIO tests
+└── CMakeLists.txt
+```
+
+These tests verify actual GPIO interactions and run on:
+- Real ESP32 hardware
+- Wokwi simulation
+
+**Test Cases:**
+- Entry button triggers state change
+- Ticket issuance on entry
+- Complete entry/exit cycles
+- Parking full rejection
+- Unpaid ticket rejection
 
 ## Code Quality
 
@@ -329,6 +368,19 @@ Configuration is in `.devcontainer/`:
 - `IDF_PATH=/opt/esp/idf` - ESP-IDF installation path
 - `IDF_TOOLS_PATH=/opt/esp` - ESP-IDF tools path
 - `TERM=xterm-256color` - Color terminal support
+
+**ESP-IDF in Devcontainer:**
+```bash
+# Source ESP-IDF environment
+export IDF_PATH=/opt/esp/idf
+source $IDF_PATH/export.sh
+
+# Or use idf.py directly
+python /opt/esp/idf/tools/idf.py build
+
+# Wokwi CLI location
+/home/develop/bin/wokwi-cli --version
+```
 
 ### Accessing Hardware in Devcontainer
 

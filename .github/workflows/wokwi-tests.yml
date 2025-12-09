@@ -51,4 +51,4 @@ jobs:
         env:
           WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
         run: |
-          wokwi-cli --scenario test/wokwi/${{ matrix.scenario }}.yaml --timeout 300000
+          /home/develop/bin/wokwi-cli --scenario test/wokwi/${{ matrix.scenario }}.yaml --timeout 300000

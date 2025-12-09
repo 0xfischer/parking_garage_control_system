@@ -8,6 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,6 +29,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       matrix:
         scenario: [console_full, entry_exit_flow, parking_full]

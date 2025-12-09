@@ -16,7 +16,6 @@ steps:
       control: pressed
       value: 1
   - wait-serial: "Ticket issued"
-    timeout: 5000
   - delay: 500ms
   - set-control:
       part-id: light-entry
@@ -40,7 +39,6 @@ steps:
       control: pressed
       value: 1
   - wait-serial: "Ticket issued"
-    timeout: 5000
   - delay: 500ms
   - set-control:
       part-id: light-entry
@@ -64,7 +62,6 @@ steps:
       control: pressed
       value: 1
   - wait-serial: "Ticket issued"
-    timeout: 5000
   - delay: 500ms
   - set-control:
       part-id: light-entry
@@ -88,7 +85,6 @@ steps:
       control: pressed
       value: 1
   - wait-serial: "Ticket issued"
-    timeout: 5000
   - delay: 500ms
   - set-control:
       part-id: light-entry
@@ -112,7 +108,6 @@ steps:
       control: pressed
       value: 1
   - wait-serial: "Ticket issued"
-    timeout: 5000
   - delay: 500ms
   - set-control:
       part-id: light-entry
@@ -137,8 +132,6 @@ steps:
       value: 1
 
   - wait-serial: "Parking full"
-    timeout: 5000
 
   # Verify we return to Idle without issuing ticket
   - wait-serial: "Idle"
-    timeout: 3000

@@ -16,26 +16,32 @@ init:
 	. $$IDF_PATH/export.sh && echo "ESP-IDF environment initialized successfully"
 
 fullclean:
-	idf.py fullclean || true
+	@bash -c ". $${IDF_PATH:-/opt/esp/idf}/export.sh && idf.py fullclean" || true
 	rm -rf build sdkconfig || true
 
 build-local:
-	idf.py build
+	@bash -c ". $${IDF_PATH:-/opt/esp/idf}/export.sh && idf.py build"
 
 test-local:
 	cmake -S test -B build-host -DCMAKE_BUILD_TYPE=Debug
 	cmake --build build-host
 	ctest --test-dir build-host --output-on-failure
+test-wokwi:
+	wokwi-cli --scenario test/wokwi/entry_exit_flow.yaml
+test-wokwi-full:
+	wokwi-cli --scenario test/wokwi/console_full.yaml
+	wokwi-cli --scenario test/wokwi/entry_exit_flow.yaml
+	wokwi-cli --scenario test/wokwi/full_capacity.yaml
+
 
 format-check:
 	find main components test -type f \( -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \) -print0 | \
 	xargs -0 -r clang-format --style=file --dry-run --Werror
 
-format-apply:
+format:
 	find main components test -type f \( -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \) -print0 | \
 	xargs -0 -r clang-format --style=file -i
 
-# separater Cppcheck-Run (robust mit Null-Separator)
 
 # clang-tidy Database erzeugen (entspricht "Lint - gen tidy db")
 lint-tidy-db:
@@ -50,7 +56,6 @@ lint-tidy: lint-tidy-db
 lint-tidy-changed: lint-tidy-db
 	git ls-files | grep -E '\.(c|cpp|h|hpp)$' | grep -v '^build/' | grep -v '^bootloader/' | grep -v '^esp-idf/' | xargs -I{} clang-tidy -p build/compile_commands_tidy -header-filter='^(main|components|examples|test)/' {}
 
-# Coverage
 coverage-run:
 	cmake -S test -B build-host -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
 	cmake --build build-host
@@ -61,21 +66,14 @@ coverage-run:
 
 # GitHub Actions lokal testen mit act
 act-test:
-	./bin/act --container-architecture linux/amd64
-
+	act --container-architecture linux/amd64
 # Spezifischen Job testen
 act-build:
-	./bin/act --container-architecture linux/amd64 --job build
+	act --container-architecture linux/amd64 --job build
 act-lint:
-	./bin/act --container-architecture linux/amd64 --job lint
-
+	act --container-architecture linux/amd64 --job lint
 act-format:
-	./bin/act --container-architecture linux/amd64 --job format
-
-wokwi-test:
-	wokwi-cli --scenario test/wokwi/console_full.yaml
-	# wokwi-cli --scenario test/wokwi/entry_exit_flow.yaml
-	# wokwi-cli --scenario test/wokwi/full_capacity.yaml
+	act --container-architecture linux/amd64 --job format
 
 # CI Pipeline komplett ausführen
 ci-local:

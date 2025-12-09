@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends \
     build-essential cmake ninja-build ccache \
     libffi-dev libssl-dev libncurses-dev \
     clang-format clang-tidy gcovr lcov \
+    doxygen graphviz \
     && rm -rf /var/lib/apt/lists/*
 
 # User anlegen
@@ -43,14 +44,26 @@ RUN pip3 install --no-cache-dir --user pre-commit
 # Git safe.directory and editor configuration
 RUN git config --global --add safe.directory /opt/esp/idf \
     && git config --global --add safe.directory /workspace \
-    && git config --global core.editor "vim"
+    && git config --global core.editor "vim" \
+    && git config --global color.ui auto \
+    && git config --global color.status auto \
+    && git config --global color.branch auto \
+    && git config --global color.diff auto
 
 # Ensure clean bashrc without old ESP-IDF paths
 RUN echo "" > ~/.bashrc \
     && echo "# ESP-IDF Environment" >> ~/.bashrc \
     && echo "export IDF_PATH=/opt/esp/idf" >> ~/.bashrc \
     && echo "export IDF_TOOLS_PATH=/opt/esp" >> ~/.bashrc \
-    && echo "source \$IDF_PATH/export.sh > /dev/null 2>&1" >> ~/.bashrc
+    && echo "source \$IDF_PATH/export.sh > /dev/null 2>&1" >> ~/.bashrc \
+    && echo "" >> ~/.bashrc \
+    && echo "# Enable colored output" >> ~/.bashrc \
+    && echo "export TERM=xterm-256color" >> ~/.bashrc \
+    && echo "export COLORTERM=truecolor" >> ~/.bashrc \
+    && echo "export CLICOLOR=1" >> ~/.bashrc \
+    && echo "export CLICOLOR_FORCE=1" >> ~/.bashrc \
+    && echo "alias ls='ls --color=auto'" >> ~/.bashrc \
+    && echo "alias grep='grep --color=auto'" >> ~/.bashrc
 
 ENTRYPOINT [ "/opt/esp/entrypoint.sh" ]
 CMD ["/bin/bash"]

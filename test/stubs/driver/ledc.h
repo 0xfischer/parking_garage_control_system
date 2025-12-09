@@ -52,8 +52,8 @@ typedef enum {
 typedef struct {
     ledc_mode_t speed_mode;
     ledc_timer_bit_t duty_resolution;
-    uint32_t freq_hz;
     ledc_timer_t timer_num;
+    uint32_t freq_hz;
     ledc_clk_cfg_t clk_cfg;
     bool deconfigure;
 } ledc_timer_config_t;

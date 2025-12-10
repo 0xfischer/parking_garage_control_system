@@ -123,25 +123,31 @@ make test-local
 
 ### Test Coverage
 
+#### Host Coverage (recommended)
 ```bash
 # Generate coverage report (builds tests with --coverage flags)
 make coverage-run
 
 # View coverage report
 open build-host/coverage.html
-
-# Generate XML for CI integration
-gcovr -r . --filter 'components/parking_system/src' --xml -o coverage.xml
 ```
 
 **Coverage Details:**
 - Host tests use Mocks for HAL/Services → only controller logic is covered
 - Current coverage: ~42% overall, ~84% for controllers
-- ESP32 coverage not measurable (cross-compilation)
 
 **Coverage Reports:**
 - `build-host/coverage.html` - HTML report with line-by-line details
-- `coverage/coverage.xml` - XML format for CI tools (Codecov, etc.)
+
+#### ESP32 Coverage (requires JTAG hardware)
+
+**Important**: ESP32 gcov coverage requires JTAG/OpenOCD hardware.
+The gcov runtime (`__gcov_merge_add` etc.) is not available for Xtensa
+cross-compilation. Wokwi simulation cannot collect coverage data.
+
+For ESP32 coverage with JTAG, see:
+- [ESP-IDF Gcov Guide](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#gcov-source-code-coverage)
+- Example: `/opt/esp/idf/examples/system/gcov/`
 
 ### Wokwi Hardware Simulation
 
@@ -155,7 +161,7 @@ make test-wokwi
 make test-wokwi-full
 
 # Specific scenario with timeout
-wokwi-cli --scenario test/wokwi/console_full.yaml --timeout 60000
+wokwi-cli --scenario test/wokwi-tests/console_full.yaml --timeout 60000
 ```
 
 #### Available Test Scenarios

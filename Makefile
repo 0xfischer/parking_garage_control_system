@@ -38,7 +38,7 @@ build-unity-tests:
 	@echo "Unity test firmware built in test/unity-hw-tests/build/"
 
 test-unity-wokwi: build-unity-tests
-	wokwi-cli --timeout 120000 --scenario test/wokwi-tests/unity_hw_tests.yaml
+	cd test/unity-hw-tests && wokwi-cli --timeout 120000 --scenario ../wokwi-tests/unity_hw_tests.yaml
 
 # ESP32 Coverage Note:
 # gcov coverage for ESP32 requires JTAG/OpenOCD - the gcov runtime
@@ -75,6 +75,9 @@ format-check:
 format:
 	find main components test -type f \( -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \) -print0 | \
 	xargs -0 -r clang-format --style=file -i
+
+format-changed:
+	git ls-files | grep -E '\.(c|cpp|h|hpp)$$' | xargs -r -I{} clang-format --style=file -i {}
 
 
 # clang-tidy Database erzeugen (entspricht "Lint - gen tidy db")

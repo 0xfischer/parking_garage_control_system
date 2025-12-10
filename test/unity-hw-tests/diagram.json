@@ -1,0 +1,269 @@
+{
+  "version": 1,
+  "author": "Parking Garage Control System",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-esp32-devkit-v1",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn-entry",
+      "top": 6.2,
+      "left": -124.8,
+      "attrs": {
+        "color": "green",
+        "bounce": "0",
+        "label": "ENTRY"
+      }
+    },
+    {
+      "type": "wokwi-servo",
+      "id": "servo-entry",
+      "top": -21.2,
+      "left": 259.2,
+      "attrs": {
+        "label": "Entry Barrier"
+      }
+    },
+    {
+      "type": "wokwi-servo",
+      "id": "servo-exit",
+      "top": 84.8,
+      "left": 255.8,
+      "attrs": {
+        "label": "Exit Barrier"
+      }
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "light-entry",
+      "top": -43.6,
+      "left": 137.5,
+      "attrs": {
+        "label": "Entry Light Barrier",
+        "bounce": "0"
+      }
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "light-exit",
+      "top": 52.4,
+      "left": 127.9,
+      "attrs": {
+        "label": "Exit Light Barrier",
+        "bounce": "0"
+      }
+    },
+    {
+      "type": "wokwi-gnd",
+      "id": "gnd1",
+      "top": 57.6,
+      "left": -163.8,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-gnd",
+      "id": "gnd2",
+      "top": 86.4,
+      "left": 201,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-gnd",
+      "id": "gnd3",
+      "top": -9.6,
+      "left": 201,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": -33.6,
+      "left": -67.75,
+      "rotate": 90,
+      "attrs": {
+        "value": "1000"
+      }
+    },
+    {
+      "type": "wokwi-vcc",
+      "id": "vcc1",
+      "top": -114.44,
+      "left": -48,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-vcc",
+      "id": "vcc2",
+      "top": 10.36,
+      "left": 172.8,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-vcc",
+      "id": "vcc3",
+      "top": 96.76,
+      "left": 163.2,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "text1",
+      "top": 192,
+      "left": 326.4,
+      "attrs": {
+        "text": "Exit Barrier"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "text2",
+      "top": -57.6,
+      "left": 316.8,
+      "attrs": {
+        "text": "Entry Barrier"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "esp:TX0",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX0",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "light-exit:2",
+      "esp:D4",
+      "orange",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "servo-entry:PWM",
+      "esp:D22",
+      "green",
+      [
+        "v-0.2",
+        "h-92.6",
+        "v-14"
+      ]
+    ],
+    [
+      "servo-entry:GND",
+      "gnd3:GND",
+      "black",
+      [
+        "h-9.6",
+        "v-38.4"
+      ]
+    ],
+    [
+      "servo-exit:PWM",
+      "esp:D2",
+      "orange",
+      [
+        "v-0.2",
+        "h-102.2",
+        "v-23.2"
+      ]
+    ],
+    [
+      "servo-exit:GND",
+      "gnd2:GND",
+      "black",
+      [
+        "h-15.8",
+        "v-48.4"
+      ]
+    ],
+    [
+      "light-entry:2",
+      "esp:D23",
+      "gold",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "btn-entry:2.r",
+      "esp:D25",
+      "green",
+      [
+        "h19.4",
+        "v53.1"
+      ]
+    ],
+    [
+      "r1:2",
+      "btn-entry:2.r",
+      "green",
+      [
+        "h0",
+        "v37.2",
+        "h-19.2"
+      ]
+    ],
+    [
+      "vcc1:VCC",
+      "r1:1",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "light-entry:3",
+      "gnd3:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "light-exit:3",
+      "gnd2:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "vcc2:VCC",
+      "servo-entry:V+",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "vcc3:VCC",
+      "servo-exit:V+",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "gnd1:GND",
+      "btn-entry:1.l",
+      "black",
+      [
+        "v0"
+      ]
+    ]
+  ],
+  "dependencies": {}
+}

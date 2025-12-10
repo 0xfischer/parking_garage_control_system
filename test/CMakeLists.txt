@@ -22,8 +22,10 @@ file(GLOB_RECURSE COMPONENT_SOURCES
   ../components/parking_system/src/tickets/*.cpp
 )
 
-# Collect test sources
-file(GLOB TEST_SOURCES CONFIGURE_DEPENDS "*.cpp")
+# Collect test sources from new structure
+file(GLOB TEST_SOURCES CONFIGURE_DEPENDS
+  "unit-tests/*.cpp"
+)
 
 # Build one executable per test source
 include(CTest)
@@ -46,8 +48,11 @@ foreach(src ${TEST_SOURCES})
     ../components/parking_system/include/parking
     ../components/parking_system/include/tickets
     ../main
+    # Unit-test support headers (stubs/mocks)
     stubs
     mocks
+    unit-tests/stubs
+    unit-tests/mocks
   )
   add_test(NAME ${name} COMMAND ${name})
 endforeach()

@@ -12,6 +12,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(parking_garage_control_system)
 
+# Note: ESP32 gcov coverage requires JTAG/OpenOCD - cannot be done via
+# normal compilation because gcov runtime (__gcov_merge_add etc.) is not
+# available for Xtensa. Use host tests (make coverage-run) for coverage.
+
 # Optional lint/format helper targets
 find_program(CLANG_FORMAT NAMES clang-format)
 find_program(RUN_CLANG_TIDY NAMES run-clang-tidy)

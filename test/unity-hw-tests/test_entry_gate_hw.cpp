@@ -29,7 +29,7 @@ static constexpr gpio_num_t ENTRY_LIGHT_BARRIER_PIN = GPIO_NUM_23;
 
 void setUp(void) {
     if (g_system == nullptr) {
-        ParkingGarageConfig config = ParkingGarageConfig::getDefault();
+        ParkingGarageConfig config = ParkingGarageConfig::fromKconfig();
         g_system = new ParkingGarageSystem(config);
         g_system->initialize();
         // Give system time to start event loop
@@ -146,7 +146,7 @@ TEST_CASE("Parking full rejects entry", "[entry][hw][capacity]") {
 
     // Fill parking to capacity by issuing tickets directly
     uint32_t capacity = ticketService.getCapacity();
-    uint32_t current = ticketService.getActiveTicketCount();
+    (void) ticketService.getActiveTicketCount(); // Suppress unused warning
 
     while (ticketService.getActiveTicketCount() < capacity) {
         ticketService.getNewTicket();

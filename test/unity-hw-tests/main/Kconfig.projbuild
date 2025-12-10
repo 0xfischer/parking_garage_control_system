@@ -1,0 +1,110 @@
+menu "Parking Garage Control System Configuration"
+
+    menu "GPIO Configuration"
+
+        config PARKING_ENTRY_BUTTON_GPIO
+            int "Entry Button GPIO"
+            default 25
+            range 0 33
+            help
+                GPIO pin for entry button (with internal pull-up).
+                Note: GPIO34-39 are input-only and do not support internal pull-ups!
+
+        config PARKING_ENTRY_LIGHT_BARRIER_GPIO
+            int "Entry Light Barrier GPIO"
+            default 15
+            range 0 39
+            help
+                GPIO pin for entry light barrier sensor (with internal pull-up).
+
+        config PARKING_ENTRY_MOTOR_GPIO
+            int "Entry Barrier Motor GPIO"
+            default 22
+            range 0 39
+            help
+                GPIO pin for entry barrier motor control.
+
+        config PARKING_EXIT_LIGHT_BARRIER_GPIO
+            int "Exit Light Barrier GPIO"
+            default 23
+            range 0 39
+            help
+                GPIO pin for exit light barrier sensor (with internal pull-up).
+
+        config PARKING_EXIT_MOTOR_GPIO
+            int "Exit Barrier Motor GPIO"
+            default 2
+            range 0 33
+            help
+                GPIO pin for exit barrier motor control.
+
+    endmenu
+
+    menu "System Configuration"
+
+        choice PARKING_CAPACITY_MODE
+            prompt "Parking Capacity Mode"
+            default PARKING_CAPACITY_TEST
+            help
+                Select parking capacity configuration.
+
+            config PARKING_CAPACITY_TEST
+                bool "Test Mode (5 spaces)"
+                help
+                    Use reduced capacity for testing (5 parking spaces).
+
+            config PARKING_CAPACITY_PRODUCTION
+                bool "Production Mode (2000 spaces)"
+                help
+                    Use full production capacity (2000 parking spaces).
+
+            config PARKING_CAPACITY_CUSTOM
+                bool "Custom Capacity"
+                help
+                    Specify custom parking capacity.
+
+        endchoice
+
+        config PARKING_CAPACITY
+            int "Parking Capacity" if PARKING_CAPACITY_CUSTOM
+            default 5 if PARKING_CAPACITY_TEST
+            default 2000 if PARKING_CAPACITY_PRODUCTION
+            range 1 10000
+            help
+                Maximum number of parking spaces.
+
+        config PARKING_BARRIER_TIMEOUT_MS
+            int "Barrier Timeout (milliseconds)"
+            default 2000
+            range 500 10000
+            help
+                Time for barrier to open/close completely.
+
+        config PARKING_BUTTON_DEBOUNCE_MS
+            int "Button Debounce Time (milliseconds)"
+            default 50
+            range 0 500
+            help
+                Debounce time for entry button (0 = no debouncing).
+
+    endmenu
+
+    menu "Console Configuration"
+
+        config PARKING_CONSOLE_ENABLED
+            bool "Enable Console Commands"
+            default y
+            help
+                Enable ESP console commands for system control and monitoring.
+
+        config PARKING_CONSOLE_MAX_ARGS
+            int "Maximum Console Arguments"
+            default 8
+            range 1 16
+            depends on PARKING_CONSOLE_ENABLED
+            help
+                Maximum number of arguments for console commands.
+
+    endmenu
+
+endmenu

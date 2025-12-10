@@ -1,0 +1,8 @@
+name: Unity Hardware Tests
+version: 1
+
+steps:
+  - wait-serial: "Press ENTER to see the list of tests"
+  - write-serial: "*\n"
+  - wait-serial: "Tests"
+  - delay: 2s

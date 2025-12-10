@@ -3,9 +3,6 @@ version: 1
 
 steps:
   - wait-serial: "Console ready"
-
-  # Fill parking with 5 cars (default capacity)
-  # Car 1
   - set-control:
       part-id: btn-entry
       control: pressed
@@ -27,8 +24,6 @@ steps:
       control: value
       value: 0
   - delay: 5000ms
-
-  # Car 2
   - set-control:
       part-id: btn-entry
       control: pressed
@@ -50,8 +45,6 @@ steps:
       control: value
       value: 0
   - delay: 5000ms
-
-  # Car 3
   - set-control:
       part-id: btn-entry
       control: pressed
@@ -73,8 +66,6 @@ steps:
       control: value
       value: 0
   - delay: 5000ms
-
-  # Car 4
   - set-control:
       part-id: btn-entry
       control: pressed
@@ -96,8 +87,6 @@ steps:
       control: value
       value: 0
   - delay: 5000ms
-
-  # Car 5 (last spot)
   - set-control:
       part-id: btn-entry
       control: pressed
@@ -119,8 +108,6 @@ steps:
       control: value
       value: 0
   - delay: 5000ms
-
-  # Car 6 - should be rejected
   - set-control:
       part-id: btn-entry
       control: pressed
@@ -130,8 +117,5 @@ steps:
       part-id: btn-entry
       control: pressed
       value: 1
-
   - wait-serial: "Parking full"
-
-  # Verify we return to Idle without issuing ticket
   - wait-serial: "Idle"

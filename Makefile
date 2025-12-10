@@ -2,7 +2,7 @@
 export
 
 .PHONY: test-local build-local format-check lint-check coverage-run act-test fullclean lint-tidy-db lint-tidy lint-tidy-changed wokwi-test wokwi-test-ci \
-	env-print env-example act-wokwi docker-release init
+	env-print env-example act-wokwi docker-release init test-wokwi-coverage build-coverage build-unity-tests test-unity-wokwi
 
 JOBS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 
@@ -27,11 +27,45 @@ test-local:
 	cmake --build build-host
 	ctest --test-dir build-host --output-on-failure
 test-wokwi:
-	wokwi-cli --scenario test/wokwi/entry_exit_flow.yaml
+	wokwi-cli --scenario test/wokwi-tests/entry_exit_flow.yaml
 test-wokwi-full:
-	wokwi-cli --scenario test/wokwi/console_full.yaml
-	wokwi-cli --scenario test/wokwi/entry_exit_flow.yaml
-	wokwi-cli --scenario test/wokwi/parking_full.yaml
+	wokwi-cli --scenario test/wokwi-tests/console_full.yaml
+	wokwi-cli --scenario test/wokwi-tests/entry_exit_flow.yaml
+	wokwi-cli --scenario test/wokwi-tests/parking_full.yaml
+
+build-unity-tests:
+	@bash -c ". $${IDF_PATH:-/opt/esp/idf}/export.sh && cd test/unity-hw-tests && idf.py build"
+	@echo "Unity test firmware built in test/unity-hw-tests/build/"
+
+test-unity-wokwi: build-unity-tests
+	wokwi-cli --timeout 120000 --scenario test/wokwi-tests/unity_hw_tests.yaml
+
+# ESP32 Coverage Note:
+# gcov coverage for ESP32 requires JTAG/OpenOCD - the gcov runtime
+# (__gcov_merge_add etc.) is not available for Xtensa cross-compilation.
+# Use host tests (make coverage-run) for code coverage instead.
+#
+# The targets below are kept for documentation but will not work without JTAG:
+# - build-coverage: Would build with coverage flags (requires JTAG to collect)
+# - test-wokwi-coverage: Would run Wokwi and dump coverage (not possible without JTAG)
+
+# Placeholder - ESP32 coverage requires JTAG hardware
+build-coverage:
+	@echo "ERROR: ESP32 gcov coverage requires JTAG/OpenOCD hardware."
+	@echo "The gcov runtime is not available for Xtensa cross-compilation."
+	@echo ""
+	@echo "For code coverage, use host tests instead:"
+	@echo "  make coverage-run"
+	@echo ""
+	@echo "For ESP32 coverage with JTAG, see:"
+	@echo "  https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#gcov-source-code-coverage"
+	@exit 1
+
+# Placeholder - requires JTAG
+test-wokwi-coverage:
+	@echo "ERROR: Wokwi coverage collection is not possible without JTAG."
+	@echo "Use 'make coverage-run' for host-based coverage instead."
+	@exit 1
 
 
 format-check:

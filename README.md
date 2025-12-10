@@ -416,7 +416,7 @@ ParkingGarage> publish ExitLightBarrierBlocked  # Auto fährt aus
 | Typ | Ort | Läuft auf | Zweck |
 |-----|-----|-----------|-------|
 | **Unit Tests (Mocks)** | `test/*.cpp` | Host (PC) | Schnelle Logik-Tests |
-| **Wokwi Simulation** | `test/wokwi/*.yaml` | Wokwi CI | Hardware-Simulation |
+| **Wokwi Simulation** | `test/wokwi-tests/*.yaml` | Wokwi CI | Hardware-Simulation |
 | **Unity HW Tests** | `components/parking_system/test/` | ESP32 | Echte Hardware |
 
 ### Schnellstart
@@ -429,11 +429,11 @@ ParkingGarage> publish ExitLightBarrierBlocked  # Auto fährt aus
 # Wokwi Simulation
 ```bash
 # Run all Wokwi CLI tests
-idf.py build 
+idf.py build
 export WOKWI_CLI_TOKEN=wok_xxx
-wokwi-cli --scenario test/wokwi/console_full.yaml
-wokwi-cli --scenario test/wokwi/entry_exit_flow.yaml
-wokwi-cli --scenario test/wokwi/full_capacity.yaml
+wokwi-cli --scenario test/wokwi-tests/console_full.yaml
+wokwi-cli --scenario test/wokwi-tests/entry_exit_flow.yaml
+wokwi-cli --scenario test/wokwi-tests/full_capacity.yaml
 ```
 
 # Hardware Tests

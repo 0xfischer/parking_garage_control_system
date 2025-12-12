@@ -59,4 +59,10 @@ class ITicketService {
      * Clears all tickets and resets ID counter to 1
      */
     virtual void reset() = 0;
+
+    /**
+     * @brief Set parking capacity
+     * @param capacity New maximum parking capacity
+     */
+    virtual void setCapacity(uint32_t capacity) = 0;
 };

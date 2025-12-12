@@ -69,14 +69,13 @@ class MockTicketService : public ITicketService {
         return m_capacity;
     }
 
-    // Test helpers
-    void setCapacity(uint32_t capacity) {
-        m_capacity = capacity;
-    }
-
-    void reset() {
+    void reset() override {
         m_tickets.clear();
         m_nextTicketId = 1;
+    }
+
+    void setCapacity(uint32_t capacity) override {
+        m_capacity = capacity;
     }
 
   private:

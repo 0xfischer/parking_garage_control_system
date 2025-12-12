@@ -464,6 +464,62 @@ int cmd_test(int argc, char** argv) {
     return 1;
 }
 
+// Command: parkgarage (with subcommands: set, reset)
+int cmd_parkgarage(int argc, char** argv) {
+    if (!g_system) {
+        printf("Error: System not initialized\n");
+        return 1;
+    }
+
+    if (argc < 2) {
+        printf("Usage: parkgarage <set|reset>\n");
+        printf("  parkgarage set capacity <n>  - Set parking capacity\n");
+        printf("  parkgarage reset             - Reset entire system\n");
+        return 1;
+    }
+
+    const char* subcommand = argv[1];
+
+    // Subcommand: set
+    if (strcmp(subcommand, "set") == 0) {
+        if (argc < 4) {
+            printf("Usage: parkgarage set <property> <value>\n");
+            printf("  parkgarage set capacity <n>  - Set parking capacity\n");
+            return 1;
+        }
+
+        const char* property = argv[2];
+        const char* value = argv[3];
+
+        if (strcmp(property, "capacity") == 0) {
+            uint32_t capacity = atoi(value);
+            if (capacity == 0) {
+                printf("Error: Invalid capacity value '%s'\n", value);
+                return 1;
+            }
+
+            g_system->getTicketService().setCapacity(capacity);
+            printf("Parking capacity set to %lu\n", capacity);
+            return 0;
+        }
+
+        printf("Error: Unknown property '%s'\n", property);
+        printf("Available properties: capacity\n");
+        return 1;
+    }
+
+    // Subcommand: reset
+    if (strcmp(subcommand, "reset") == 0) {
+        g_system->reset();
+        printf("Parking system reset complete\n");
+        return 0;
+    }
+
+    printf("Error: Unknown subcommand '%s'\n", subcommand);
+    printf("Usage: parkgarage <set|reset>\n");
+    return 1;
+}
+
 // Command: help (custom)
 int cmd_help(int argc, char** argv) {
     printf("\n=== Parking Garage Control System ===\n\n");
@@ -472,6 +528,8 @@ int cmd_help(int argc, char** argv) {
     printf("  ticket list               - List all tickets\n");
     printf("  ticket pay <id>           - Pay ticket\n");
     printf("  ticket validate <id>      - Validate ticket for exit\n");
+    printf("  parkgarage set capacity <n> - Set parking capacity\n");
+    printf("  parkgarage reset          - Reset entire system\n");
     printf("  publish <event>           - Publish event (use 'list')\n");
     printf("  gpio                      - GPIO read/write (use for usage)\n");
     printf("  test <entry|exit|full|info>  - Hardware test guides\n");
@@ -543,6 +601,15 @@ void console_init(ParkingGarageSystem* system) {
         .argtable = nullptr,
     };
     esp_console_cmd_register(&test_cmd);
+
+    const esp_console_cmd_t parkgarage_cmd = {
+        .command = "parkgarage",
+        .help = "System configuration (set capacity|reset)",
+        .hint = nullptr,
+        .func = &cmd_parkgarage,
+        .argtable = nullptr,
+    };
+    esp_console_cmd_register(&parkgarage_cmd);
 
     ESP_LOGI(TAG, "Console commands registered");
 }

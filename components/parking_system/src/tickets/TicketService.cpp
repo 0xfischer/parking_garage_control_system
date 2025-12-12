@@ -152,3 +152,11 @@ void TicketService::reset() {
         xSemaphoreGive(m_mutex);
     }
 }
+
+void TicketService::setCapacity(uint32_t capacity) {
+    if (xSemaphoreTake(m_mutex, portMAX_DELAY) == pdTRUE) {
+        m_capacity = capacity;
+        ESP_LOGI(TAG, "Capacity set to %lu", capacity);
+        xSemaphoreGive(m_mutex);
+    }
+}

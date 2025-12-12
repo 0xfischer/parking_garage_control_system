@@ -22,8 +22,8 @@ static ParkingGarageConfig createTestConfig() {
     ParkingGarageConfig config = ParkingGarageConfig::fromKconfig();
 
     // Override for faster tests
-    config.barrierTimeoutMs = 500;  // 500ms instead of 2000ms
-    config.capacity = 3;            // Small capacity to test "parking full"
+    config.barrierTimeoutMs = 500; // 500ms instead of 2000ms
+    config.capacity = 3;           // Small capacity to test "parking full"
 
     ESP_LOGI(TAG, "Test config: barrierTimeout=%lums, capacity=%lu",
              config.barrierTimeoutMs, config.capacity);

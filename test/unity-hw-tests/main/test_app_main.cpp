@@ -31,7 +31,7 @@ extern "C" void app_main(void) {
         nvs_flash_init();
     }
 
-    esp_log_level_set("*", ESP_LOG_DEBUG);
+    esp_log_level_set("*", ESP_LOG_INFO);
 
     // Initialize test system (creates ParkingGarageSystem + starts EventLoop)
     ESP_LOGI(TAG, "Initializing test system...");

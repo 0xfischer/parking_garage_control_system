@@ -34,13 +34,17 @@ enable_testing()
 foreach(src ${TEST_SOURCES})
   get_filename_component(name ${src} NAME_WE)
 
-  # Temporarily disable broken test
-  if(name STREQUAL "test_console_workflow" OR name STREQUAL "test_integration")
+  # Temporarily disable broken test (console workflow requires ConsoleHarness)
+  if(name STREQUAL "test_console_workflow")
     continue()
   endif()
 
   add_executable(${name} ${src} ${COMPONENT_SOURCES})
   target_include_directories(${name} PRIVATE
+    # Unit-test stubs/mocks FIRST (to override ESP-IDF headers)
+    unit-tests/stubs
+    unit-tests/mocks
+    # Component headers
     ../components/parking_system/include
     ../components/parking_system/include/events
     ../components/parking_system/include/gates
@@ -48,11 +52,6 @@ foreach(src ${TEST_SOURCES})
     ../components/parking_system/include/parking
     ../components/parking_system/include/tickets
     ../main
-    # Unit-test support headers (stubs/mocks)
-    stubs
-    mocks
-    unit-tests/stubs
-    unit-tests/mocks
   )
   add_test(NAME ${name} COMMAND ${name})
 endforeach()

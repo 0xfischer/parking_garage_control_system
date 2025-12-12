@@ -1,14 +1,81 @@
-#include "../mocks/MockGpioInput.h"
-#include "../mocks/MockGpioOutput.h"
-#include "../mocks/MockEventBus.h"
-#include "../mocks/MockTicketService.h"
+/**
+ * @file test_integration.cpp
+ * @brief Integration tests: Entry and Exit controllers on same event bus
+ *        Cross-check that entry actions don't affect exit, and vice versa.
+ */
+
+#include "mocks/MockGpioInput.h"
+#include "mocks/MockGate.h"
+#include "mocks/MockEventBus.h"
+#include "mocks/MockTicketService.h"
 #include "EntryGateController.h"
 #include "ExitGateController.h"
 #include <cassert>
 #include <cstdio>
 
-void test_entry_does_not_affect_exit();
-void test_exit_does_not_affect_entry();
+void test_entry_does_not_affect_exit() {
+    printf("Test: Entry does not affect Exit\n");
+
+    MockEventBus eventBus;
+    MockGpioInput entryButton;
+    MockGate entryGate;
+    MockGate exitGate;
+    MockTicketService tickets(5);
+
+    EntryGateController entry(eventBus, entryButton, entryGate, tickets, 50);
+    ExitGateController exitc(eventBus, exitGate, tickets, 50, 10);
+
+    // Trigger entry flow
+    // Publish entry button press on event bus
+    eventBus.publish(Event(EventType::EntryButtonPressed));
+    eventBus.processAllPending();
+    assert(entry.getState() == EntryGateState::OpeningBarrier);
+    assert(entryGate.isOpen() == true);
+
+    // Exit must remain idle and gate closed
+    assert(exitc.getState() == ExitGateState::Idle);
+    assert(exitGate.isOpen() == false);
+
+    // Advance entry to waiting for car
+    entry.TEST_forceBarrierTimeout();
+    assert(entry.getState() == EntryGateState::WaitingForCar);
+
+    // Cross: still no change at exit
+    assert(exitc.getState() == ExitGateState::Idle);
+    assert(exitGate.isOpen() == false);
+
+    printf("  ✓ No cross-effects from entry to exit\n\n");
+}
+
+void test_exit_does_not_affect_entry() {
+    printf("Test: Exit does not affect Entry\n");
+
+    MockEventBus eventBus;
+    MockGpioInput entryButton;
+    MockGate entryGate;
+    MockGate exitGate;
+    MockTicketService tickets(5);
+
+    // Prepare a PAID ticket so exit validation can succeed
+    uint32_t ticketId = tickets.getNewTicket(); // ID=1
+    tickets.payTicket(ticketId);
+
+    EntryGateController entry(eventBus, entryButton, entryGate, tickets, 50);
+    ExitGateController exitc(eventBus, exitGate, tickets, 50, 10);
+
+    // Trigger exit flow via manual validation
+    bool validated = exitc.validateTicketManually(ticketId);
+    assert(validated);
+    eventBus.processAllPending();
+    assert(exitc.getState() == ExitGateState::OpeningBarrier);
+    assert(exitGate.isOpen() == true);
+
+    // Entry must remain idle and gate closed
+    assert(entry.getState() == EntryGateState::Idle);
+    assert(entryGate.isOpen() == false);
+
+    printf("  ✓ No cross-effects from exit to entry\n\n");
+}
 
 int main() {
     printf("=================================\n");
@@ -22,54 +89,4 @@ int main() {
     printf("All integration tests passed!\n");
     printf("=================================\n");
     return 0;
-}
-
-void test_entry_does_not_affect_exit() {
-    MockEventBus eventBus;
-    MockGpioInput entryButton, entryBarrier;
-    MockGpioOutput entryMotor;
-    MockGpioInput exitBarrier;
-    MockGpioOutput exitMotor;
-    MockTicketService tickets(5);
-
-    EntryGateController entry(eventBus, entryButton, entryBarrier, entryMotor, tickets, 50);
-    ExitGateController exitc(eventBus, exitBarrier, exitMotor, tickets, 50, 10);
-
-    eventBus.publish(Event(EventType::EntryButtonPressed));
-    eventBus.processAllPending();
-    assert(entry.getState() == EntryGateState::OpeningBarrier);
-    assert(entryMotor.getLevel() == true);
-
-    assert(exitc.getState() == ExitGateState::Idle);
-    assert(exitMotor.getLevel() == false);
-
-    entry.TEST_forceBarrierTimeout();
-    assert(entry.getState() == EntryGateState::WaitingForCar);
-
-    assert(exitc.getState() == ExitGateState::Idle);
-    assert(exitMotor.getLevel() == false);
-}
-
-void test_exit_does_not_affect_entry() {
-    MockEventBus eventBus;
-    MockGpioInput entryButton, entryBarrier;
-    MockGpioOutput entryMotor;
-    MockGpioInput exitBarrier;
-    MockGpioOutput exitMotor;
-    MockTicketService tickets(5);
-
-    uint32_t ticketId = tickets.getNewTicket();
-    tickets.payTicket(ticketId);
-
-    EntryGateController entry(eventBus, entryButton, entryBarrier, entryMotor, tickets, 50);
-    ExitGateController exitc(eventBus, exitBarrier, exitMotor, tickets, 50, 10);
-
-    bool validated = exitc.validateTicketManually(ticketId);
-    assert(validated);
-    eventBus.processAllPending();
-    assert(exitc.getState() == ExitGateState::OpeningBarrier);
-    assert(exitMotor.getLevel() == true);
-
-    assert(entry.getState() == EntryGateState::Idle);
-    assert(entryMotor.getLevel() == false);
 }

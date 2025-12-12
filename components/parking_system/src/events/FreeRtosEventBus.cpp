@@ -114,7 +114,7 @@ void FreeRtosEventBus::dispatchEvent(const Event& event) {
 }
 
 void FreeRtosEventBus::startEventLoop(uint32_t stackSize, UBaseType_t priority,
-                                       const char* taskName) {
+                                      const char* taskName) {
     if (m_eventLoopTask != nullptr) {
         ESP_LOGW(TAG, "Event loop already running");
         return;

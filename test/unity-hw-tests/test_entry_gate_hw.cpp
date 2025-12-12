@@ -65,7 +65,7 @@ static void test_complete_entry_cycle(void) {
     Event buttonEvent(EventType::EntryButtonPressed);
     eventBus.publish(buttonEvent);
 
-    vTaskDelay(pdMS_TO_TICKS(600));  // Wait for barrier to open (500ms timeout + margin)
+    vTaskDelay(pdMS_TO_TICKS(600)); // Wait for barrier to open (500ms timeout + margin)
 
     uint32_t ticketsAfter = ticketService.getActiveTicketCount();
     TEST_ASSERT_EQUAL_MESSAGE(ticketsBefore + 1, ticketsAfter, "Ticket should be issued");
@@ -81,7 +81,7 @@ static void test_complete_entry_cycle(void) {
     Event clearEvent(EventType::EntryLightBarrierCleared);
     eventBus.publish(clearEvent);
 
-    vTaskDelay(pdMS_TO_TICKS(2700));  // Wait for barrier to close (2000ms wait + 500ms close + margin)
+    vTaskDelay(pdMS_TO_TICKS(2700)); // Wait for barrier to close (2000ms wait + 500ms close + margin)
     TEST_ASSERT_EQUAL_MESSAGE(EntryGateState::Idle, controller.getState(), "Should return to Idle");
 
     ESP_LOGI(TAG, "Complete entry cycle test passed");
@@ -104,7 +104,7 @@ static void test_second_entry_cycle(void) {
     Event buttonEvent(EventType::EntryButtonPressed);
     eventBus.publish(buttonEvent);
 
-    vTaskDelay(pdMS_TO_TICKS(600));  // Wait for ticket to be issued
+    vTaskDelay(pdMS_TO_TICKS(600)); // Wait for ticket to be issued
 
     uint32_t ticketsAfter = ticketService.getActiveTicketCount();
     TEST_ASSERT_EQUAL_MESSAGE(ticketsBefore + 1, ticketsAfter, "Second ticket should be issued");
@@ -177,7 +177,7 @@ static void test_gpio_button_triggers_entry(void) {
     uint32_t ticketsBefore = ticketService.getActiveTicketCount();
 
     gate.getButton().simulateInterrupt(GPIO_BUTTON_PRESSED);
-    vTaskDelay(pdMS_TO_TICKS(600));  // Wait for barrier to open (500ms timeout + margin)
+    vTaskDelay(pdMS_TO_TICKS(600)); // Wait for barrier to open (500ms timeout + margin)
 
     uint32_t ticketsAfter = ticketService.getActiveTicketCount();
     TEST_ASSERT_EQUAL_MESSAGE(ticketsBefore + 1, ticketsAfter, "GPIO button should issue ticket");
@@ -203,7 +203,7 @@ static void test_gpio_light_barrier_detects_car(void) {
     // Start entry cycle via EventBus
     Event buttonEvent(EventType::EntryButtonPressed);
     eventBus.publish(buttonEvent);
-    vTaskDelay(pdMS_TO_TICKS(700));  // Wait for barrier to open (500ms timeout + processing margin)
+    vTaskDelay(pdMS_TO_TICKS(700)); // Wait for barrier to open (500ms timeout + processing margin)
 
     TEST_ASSERT_EQUAL_MESSAGE(EntryGateState::WaitingForCar, controller.getState(), "Should be WaitingForCar");
 
@@ -213,7 +213,7 @@ static void test_gpio_light_barrier_detects_car(void) {
     TEST_ASSERT_EQUAL_MESSAGE(EntryGateState::CarPassing, controller.getState(), "GPIO should detect car");
 
     gate.getLightBarrier().simulateInterrupt(GPIO_LIGHT_BARRIER_CLEARED);
-    vTaskDelay(pdMS_TO_TICKS(2700));  // Wait for barrier to close (2000ms wait + 500ms close + margin)
+    vTaskDelay(pdMS_TO_TICKS(2700)); // Wait for barrier to close (2000ms wait + 500ms close + margin)
 
     TEST_ASSERT_EQUAL_MESSAGE(EntryGateState::Idle, controller.getState(), "Should return to Idle");
 

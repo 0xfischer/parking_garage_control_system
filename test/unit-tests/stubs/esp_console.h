@@ -18,9 +18,11 @@ struct esp_console_repl_config_t {
 struct esp_console_dev_uart_config_t {};
 
 #define ESP_CONSOLE_REPL_CONFIG_DEFAULT() \
-    {}
+    {                                     \
+    }
 #define ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT() \
-    {}
+    {                                         \
+    }
 
 inline void esp_console_register_help_command() {
 }

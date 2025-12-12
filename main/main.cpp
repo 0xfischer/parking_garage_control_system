@@ -14,7 +14,6 @@ static const char* TAG = "Main";
 // Global parking garage system instance
 static ParkingGarageSystem* g_parkingSystem = nullptr;
 
-
 /**
  * @brief Initialize NVS (Non-Volatile Storage)
  */

@@ -39,13 +39,13 @@ void reset_test_system();
 //   - Button: Active low - LOW=pressed, HIGH=released
 
 /** @brief GPIO level to simulate light barrier blocked (car detected) */
-constexpr bool GPIO_LIGHT_BARRIER_BLOCKED = false;  // LOW = car detected
+constexpr bool GPIO_LIGHT_BARRIER_BLOCKED = false; // LOW = car detected
 
 /** @brief GPIO level to simulate light barrier cleared (car passed) */
-constexpr bool GPIO_LIGHT_BARRIER_CLEARED = true;   // HIGH = no car
+constexpr bool GPIO_LIGHT_BARRIER_CLEARED = true; // HIGH = no car
 
 /** @brief GPIO level to simulate button pressed (active low) */
-constexpr bool GPIO_BUTTON_PRESSED = false;         // LOW = pressed
+constexpr bool GPIO_BUTTON_PRESSED = false; // LOW = pressed
 
 /** @brief GPIO level to simulate button released (active low) */
-constexpr bool GPIO_BUTTON_RELEASED = true;         // HIGH = released
+constexpr bool GPIO_BUTTON_RELEASED = true; // HIGH = released

@@ -84,7 +84,7 @@ static void test_exit_accepts_paid_ticket(void) {
     ESP_LOGI(TAG, "Paid ticket validation test passed");
 
     // Complete the exit flow
-    vTaskDelay(pdMS_TO_TICKS(800));  // Wait for barrier to open (500ms timeout)
+    vTaskDelay(pdMS_TO_TICKS(800)); // Wait for barrier to open (500ms timeout)
 
     Event blockEvent(EventType::ExitLightBarrierBlocked);
     eventBus.publish(blockEvent);
@@ -93,7 +93,7 @@ static void test_exit_accepts_paid_ticket(void) {
     Event clearEvent(EventType::ExitLightBarrierCleared);
     eventBus.publish(clearEvent);
 
-    vTaskDelay(pdMS_TO_TICKS(2700));  // Wait for barrier to close (2000ms wait + 500ms close + margin)
+    vTaskDelay(pdMS_TO_TICKS(2700)); // Wait for barrier to close (2000ms wait + 500ms close + margin)
 }
 
 /**
@@ -118,7 +118,7 @@ static void test_complete_exit_cycle(void) {
     exitController.validateTicketManually(ticketId);
 
     // Wait for barrier to open
-    vTaskDelay(pdMS_TO_TICKS(600));  // Wait for barrier to open (500ms timeout + margin)
+    vTaskDelay(pdMS_TO_TICKS(600)); // Wait for barrier to open (500ms timeout + margin)
 
     TEST_ASSERT_EQUAL(ExitGateState::WaitingForCarToPass, exitController.getState());
 
@@ -133,7 +133,7 @@ static void test_complete_exit_cycle(void) {
     eventBus.publish(clearEvent);
 
     // Wait for safety delay + close
-    vTaskDelay(pdMS_TO_TICKS(2700));  // Wait for barrier to close (2000ms wait + 500ms close + margin)
+    vTaskDelay(pdMS_TO_TICKS(2700)); // Wait for barrier to close (2000ms wait + 500ms close + margin)
 
     TEST_ASSERT_EQUAL(ExitGateState::Idle, exitController.getState());
 
@@ -167,7 +167,7 @@ static void test_gpio_exit_light_barrier(void) {
 
     // Validate ticket to start exit flow
     exitController.validateTicketManually(ticketId);
-    vTaskDelay(pdMS_TO_TICKS(700));  // Wait for barrier to open (500ms timeout + processing margin)
+    vTaskDelay(pdMS_TO_TICKS(700)); // Wait for barrier to open (500ms timeout + processing margin)
 
     TEST_ASSERT_EQUAL_MESSAGE(ExitGateState::WaitingForCarToPass, exitController.getState(),
                               "Should be WaitingForCarToPass");
@@ -179,7 +179,7 @@ static void test_gpio_exit_light_barrier(void) {
                               "GPIO should detect car at exit");
 
     exitGate.getLightBarrier().simulateInterrupt(GPIO_LIGHT_BARRIER_CLEARED);
-    vTaskDelay(pdMS_TO_TICKS(2700));  // Wait for barrier to close (2000ms wait + 500ms close + margin)
+    vTaskDelay(pdMS_TO_TICKS(2700)); // Wait for barrier to close (2000ms wait + 500ms close + margin)
 
     TEST_ASSERT_EQUAL_MESSAGE(ExitGateState::Idle, exitController.getState(),
                               "Should return to Idle after exit");

@@ -11,7 +11,7 @@ typedef struct TimerStub {
     void* id;
     TickType_t period_ticks;
     BaseType_t auto_reload;
-} * TimerHandle_t;
+}* TimerHandle_t;
 
 typedef void (*TimerCallbackFunction_t)(TimerHandle_t xTimer);
 
@@ -42,6 +42,11 @@ static inline BaseType_t xTimerReset(TimerHandle_t /*xTimer*/, TickType_t /*xTic
 
 static inline BaseType_t xTimerStop(TimerHandle_t /*xTimer*/, TickType_t /*xTicksToWait*/) {
     return pdPASS;
+}
+
+static inline BaseType_t xTimerIsTimerActive(TimerHandle_t xTimer) {
+    // In host stubs, we just return false (timer not active)
+    return xTimer ? pdFALSE : pdFALSE;
 }
 
 static inline BaseType_t xTimerChangePeriod(TimerHandle_t xTimer, TickType_t xNewPeriod, TickType_t /*xTicksToWait*/) {

@@ -12,18 +12,21 @@ steps:
       part-id: btn-entry
       control: pressed
       value: 1
-  - wait-serial: "Ticket issued"
-  - delay: 500ms
+  - wait-serial: "Ticket issued: ID=1"
+  - wait-serial: "OpeningBarrier"
+  - delay: 2.5s
   - set-control:
       part-id: light-entry
       control: value
       value: 1
-  - delay: 500ms
+  - wait-serial: "CarPassing"
   - set-control:
       part-id: light-entry
       control: value
       value: 0
-  - delay: 5000ms
+  - wait-serial: "ClosingBarrier"
+  - wait-serial: "Idle"
+
   - set-control:
       part-id: btn-entry
       control: pressed
@@ -33,18 +36,21 @@ steps:
       part-id: btn-entry
       control: pressed
       value: 1
-  - wait-serial: "Ticket issued"
-  - delay: 500ms
+  - wait-serial: "Ticket issued: ID=2"
+  - wait-serial: "OpeningBarrier"
+  - delay: 2.5s
   - set-control:
       part-id: light-entry
       control: value
       value: 1
-  - delay: 500ms
+  - wait-serial: "CarPassing"
   - set-control:
       part-id: light-entry
       control: value
       value: 0
-  - delay: 5000ms
+  - wait-serial: "ClosingBarrier"
+  - wait-serial: "Idle"
+
   - set-control:
       part-id: btn-entry
       control: pressed
@@ -54,18 +60,21 @@ steps:
       part-id: btn-entry
       control: pressed
       value: 1
-  - wait-serial: "Ticket issued"
-  - delay: 500ms
+  - wait-serial: "Ticket issued: ID=3"
+  - wait-serial: "OpeningBarrier"
+  - delay: 2.5s
   - set-control:
       part-id: light-entry
       control: value
       value: 1
-  - delay: 500ms
+  - wait-serial: "CarPassing"
   - set-control:
       part-id: light-entry
       control: value
       value: 0
-  - delay: 5000ms
+  - wait-serial: "ClosingBarrier"
+  - wait-serial: "Idle"
+
   - set-control:
       part-id: btn-entry
       control: pressed
@@ -75,18 +84,21 @@ steps:
       part-id: btn-entry
       control: pressed
       value: 1
-  - wait-serial: "Ticket issued"
-  - delay: 500ms
+  - wait-serial: "Ticket issued: ID=4"
+  - wait-serial: "OpeningBarrier"
+  - delay: 2.5s
   - set-control:
       part-id: light-entry
       control: value
       value: 1
-  - delay: 500ms
+  - wait-serial: "CarPassing"
   - set-control:
       part-id: light-entry
       control: value
       value: 0
-  - delay: 5000ms
+  - wait-serial: "ClosingBarrier"
+  - wait-serial: "Idle"
+
   - set-control:
       part-id: btn-entry
       control: pressed
@@ -96,18 +108,21 @@ steps:
       part-id: btn-entry
       control: pressed
       value: 1
-  - wait-serial: "Ticket issued"
-  - delay: 500ms
+  - wait-serial: "Ticket issued: ID=5"
+  - wait-serial: "OpeningBarrier"
+  - delay: 2.5s
   - set-control:
       part-id: light-entry
       control: value
       value: 1
-  - delay: 500ms
+  - wait-serial: "CarPassing"
   - set-control:
       part-id: light-entry
       control: value
       value: 0
-  - delay: 5000ms
+  - wait-serial: "ClosingBarrier"
+  - wait-serial: "Idle"
+
   - set-control:
       part-id: btn-entry
       control: pressed
@@ -117,5 +132,6 @@ steps:
       part-id: btn-entry
       control: pressed
       value: 1
+
   - wait-serial: "Parking full"
   - wait-serial: "Idle"

@@ -56,6 +56,25 @@ void ExitGateController::setupGpioInterrupts() {
     ESP_LOGI(TAG, "Exit gate GPIO interrupts configured");
 }
 
+void ExitGateController::reset() {
+    // Stop timers if running
+    if (m_barrierTimer && xTimerIsTimerActive(m_barrierTimer)) {
+        xTimerStop(m_barrierTimer, 0);
+    }
+    if (m_validationTimer && xTimerIsTimerActive(m_validationTimer)) {
+        xTimerStop(m_validationTimer, 0);
+    }
+
+    // Reset state
+    m_state = ExitGateState::Idle;
+    m_currentTicketId = 0;
+
+    // Ensure barrier is closed
+    m_gate->close();
+
+    ESP_LOGI(TAG, "ExitGateController reset to Idle");
+}
+
 const char* ExitGateController::getStateString() const {
     switch (m_state) {
         case ExitGateState::Idle:

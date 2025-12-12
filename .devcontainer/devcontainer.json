@@ -8,9 +8,11 @@
       "extensions": [
         "ms-vscode.cpptools",
         "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools-extension-pack",
         "espressif.esp-idf-extension",
         "Wokwi.wokwi-vscode",
-        "SanjulaGanepola.github-local-actions"
+        "SanjulaGanepola.github-local-actions",
+        "bierner.markdown-mermaid"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",
@@ -46,7 +48,8 @@
       "extensions": [
         "ms-vscode.cpptools",
         "espressif.esp-idf-extension",
-        "Wokwi.wokwi-vscode"
+        "Wokwi.wokwi-vscode",
+        "bierner.markdown-mermaid"
       ]
     }
   },

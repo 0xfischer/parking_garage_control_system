@@ -83,6 +83,12 @@ class ExitGateController {
      */
     void setupGpioInterrupts();
 
+    /**
+     * @brief Reset controller to initial state
+     * Stops timers, resets state to Idle, clears current ticket, closes barrier
+     */
+    void reset();
+
 #ifdef UNIT_TEST
     // Test helpers to simulate timer expirations without FreeRTOS timers
     void TEST_forceBarrierTimeout() {

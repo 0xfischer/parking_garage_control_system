@@ -16,29 +16,34 @@ init:
 	. $$IDF_PATH/export.sh && echo "ESP-IDF environment initialized successfully"
 
 fullclean:
-	@bash -c ". $${IDF_PATH:-/opt/esp/idf}/export.sh && idf.py fullclean" || true
-	rm -rf build sdkconfig || true
+	@echo "=== Full clean ==="
+	@bash -c 'idf.py fullclean'
+	@rm -rf build sdkconfig 2>/dev/null || true
+	@bash -c "cd test/unity-hw-tests && idf.py fullclean"
+	@rm -rf test/unity-hw-tests/build test/unity-hw-tests/sdkconfig 2>/dev/null || true
+	@echo "✓ Clean complete"
 
 build-local:
-	@bash -c ". $${IDF_PATH:-/opt/esp/idf}/export.sh && idf.py build"
+	@bash -c 'idf.py build'
 
-test-local:
+test-host:
 	cmake -S test -B build-host -DCMAKE_BUILD_TYPE=Debug
 	cmake --build build-host
 	ctest --test-dir build-host --output-on-failure
 test-wokwi:
-	wokwi-cli --scenario test/wokwi-tests/entry_exit_flow.yaml
+	wokwi-cli --scenario test/wokwi-tests/parking_full.yaml
 test-wokwi-full:
 	wokwi-cli --scenario test/wokwi-tests/console_full.yaml
 	wokwi-cli --scenario test/wokwi-tests/entry_exit_flow.yaml
 	wokwi-cli --scenario test/wokwi-tests/parking_full.yaml
 
 build-unity-tests:
-	@bash -c ". $${IDF_PATH:-/opt/esp/idf}/export.sh && cd test/unity-hw-tests && idf.py build"
+	@bash -c "cd test/unity-hw-tests && idf.py build"
 	@echo "Unity test firmware built in test/unity-hw-tests/build/"
 
 test-unity-wokwi: build-unity-tests
 	cd test/unity-hw-tests && wokwi-cli --timeout 120000 --scenario ../wokwi-tests/unity_hw_tests.yaml
+
 
 # ESP32 Coverage Note:
 # gcov coverage for ESP32 requires JTAG/OpenOCD - the gcov runtime

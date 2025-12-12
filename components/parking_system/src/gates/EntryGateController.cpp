@@ -79,6 +79,22 @@ const char* EntryGateController::getStateString() const {
     }
 }
 
+void EntryGateController::reset() {
+    // Stop timer if running
+    if (m_barrierTimer && xTimerIsTimerActive(m_barrierTimer)) {
+        xTimerStop(m_barrierTimer, 0);
+    }
+
+    // Reset state
+    m_state = EntryGateState::Idle;
+    m_currentTicketId = 0;
+
+    // Ensure barrier is closed
+    m_gate->close();
+
+    ESP_LOGI(TAG, "EntryGateController reset to Idle");
+}
+
 void EntryGateController::setState(EntryGateState newState) {
     if (m_state != newState) {
         ESP_LOGI(TAG, "State: %s -> %s", getStateString(), entryGateStateToString(newState));

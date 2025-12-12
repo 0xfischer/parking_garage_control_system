@@ -76,6 +76,13 @@ void EspGpioInput::disableInterrupt() {
     ESP_LOGI(TAG, "Interrupt disabled on GPIO %d", m_pin);
 }
 
+void EspGpioInput::simulateInterrupt(bool level) {
+    ESP_LOGI(TAG, "Simulating interrupt on GPIO %d with level %d", m_pin, level);
+    if (m_handler) {
+        m_handler(level);
+    }
+}
+
 void IRAM_ATTR EspGpioInput::gpioIsrHandler(void* arg) {
     auto* input = static_cast<EspGpioInput*>(arg);
     if (input) {

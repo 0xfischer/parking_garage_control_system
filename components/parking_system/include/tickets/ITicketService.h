@@ -53,4 +53,10 @@ class ITicketService {
      * @return Maximum number of parking spaces
      */
     [[nodiscard]] virtual uint32_t getCapacity() const = 0;
+
+    /**
+     * @brief Reset ticket service to initial state
+     * Clears all tickets and resets ID counter to 1
+     */
+    virtual void reset() = 0;
 };

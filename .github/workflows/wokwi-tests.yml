@@ -16,8 +16,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Initialize ESP-IDF environment
+        run: |
+          export IDF_PATH=/opt/esp/idf
+          . $IDF_PATH/export.sh
+          echo "ESP-IDF environment initialized successfully."
+
       - name: Build firmware (inside devcontainer image)
-        run: make build-local
+        run: |
+          make build-local
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4

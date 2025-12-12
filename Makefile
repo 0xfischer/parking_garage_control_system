@@ -13,7 +13,7 @@ init:
 		exit 1; \
 	fi; \
 	echo "Sourcing ESP-IDF environment from $$IDF_PATH/export.sh..."; \
-	. $$IDF_PATH/export.sh && echo "ESP-IDF environment initialized successfully"
+	. $$IDF_PATH/export.sh && echo "ESP-IDF environment initialized successfully" && exec $$SHELL
 
 fullclean:
 	@echo "=== Full clean ==="

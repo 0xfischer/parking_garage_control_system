@@ -3,46 +3,13 @@
 Event-driven parking garage control system for ESP32 using ESP-IDF and FreeRTOS.
 
 ![Build](https://github.com/0xfischer/parking_garage_control_system/actions/workflows/build.yml/badge.svg)
+![Host Tests](https://github.com/0xfischer/parking_garage_control_system/actions/workflows/host-tests.yml/badge.svg)
+![Unity HW Tests](https://github.com/0xfischer/parking_garage_control_system/actions/workflows/unity-hw-tests.yml/badge.svg)
+![Wokwi Tests](https://github.com/0xfischer/parking_garage_control_system/actions/workflows/wokwi-tests.yml/badge.svg)
 ![Format](https://github.com/0xfischer/parking_garage_control_system/actions/workflows/format.yml/badge.svg)
 ![Docs](https://github.com/0xfischer/parking_garage_control_system/actions/workflows/docs.yml/badge.svg)
 ![Coverage](https://github.com/0xfischer/parking_garage_control_system/actions/workflows/coverage.yml/badge.svg)
 [![Releases](https://img.shields.io/github/v/release/0xfischer/parking_garage_control_system?label=release)](https://github.com/0xfischer/parking_garage_control_system/releases)
-
-> Tipp: Lokales Testen von GitHub Actions findest du in `ACT.md`.
-
-## Devcontainer Release (GHCR)
-
-- Zweck: Das Devcontainer-Image aus `.devcontainer/Dockerfile` bauen und in die GitHub Container Registry (GHCR) pushen.
-- Script: `tools/release_devcontainer_to_github.sh` (ersetzt frühere `docker_*` Skripte).
-
-### Voraussetzungen
-- Docker CLI lauffähig (`docker info` ohne Fehler)
-- `GITHUB_TOKEN` mit `write:packages`-Recht gesetzt (z. B. in `.env`)
-
-### Beispiele
-```zsh
-# Push latest (amd64, buildx)
-GITHUB_TOKEN=ghp_xxx tools/release_devcontainer_to_github.sh
-
-# Mit Tag
-GITHUB_TOKEN=ghp_xxx tools/release_devcontainer_to_github.sh --tag v5.2.2
-
-# Alternative Image-/Owner-/Repo-Angabe
-GITHUB_TOKEN=ghp_xxx tools/release_devcontainer_to_github.sh \
-    --image ghcr.io/0xfischer/parking_garage_control_system-dev:latest \
-    --owner 0xfischer --repo parking_garage_control_system
-```
-
-## Dokumentation
-
-- Projekt-Dokumentation wird via Doxygen generiert und nach `gh-pages` veröffentlicht.
-- Aktivieren Sie GitHub Pages in den Repo-Einstellungen (Quelle: `gh-pages`).
-- Link: https://0xfischer.github.io/parking_garage_control_system/
-
-## Releases
-
-- Getaggte Versionen (`vX.Y.Z`) erzeugen automatisch ein Release mit Artefakten.
-- Changelog: siehe `CHANGELOG.md`.
 
 ## Features
 
@@ -54,21 +21,56 @@ GITHUB_TOKEN=ghp_xxx tools/release_devcontainer_to_github.sh \
 - **Configurable**: GPIO pins and capacity configurable via Kconfig
 - **Thread-Safe**: FreeRTOS mutex and queue protection
 
+## Demo
+
+![Demo](demo.gif)
+
+## Quick Start
+
+### Prerequisites
+
+- ESP-IDF v5.5 or later
+- ESP32 development board
+
+### Build and Flash
+
+```bash
+# Set up ESP-IDF environment
+. $IDF_PATH/export.sh
+
+# Build
+idf.py build
+
+# Flash and monitor
+idf.py -p /dev/ttyUSB0 flash monitor
+```
+
+### Configuration
+
+Use `idf.py menuconfig` to configure:
+- **GPIO pins**: "Parking Garage Control System Configuration" → "GPIO Configuration"
+- **Capacity**: Choose Test Mode (5 spaces) or Production Mode (2000 spaces)
+- **Timings**: Barrier timeout, button debounce
+
 ## Hardware Configuration
 
 Default GPIO assignment:
-- **GPIO 25**: Entry Button (with internal pull-up)
-- **GPIO 23**: Entry Light Barrier (with internal pull-up)
-- **GPIO 22**: Entry Barrier Servo (PWM via LEDC Channel 0)
-- **GPIO 4**: Exit Light Barrier (with internal pull-up)
-- **GPIO 2**: Exit Barrier Servo (PWM via LEDC Channel 1)
+
+| Component | GPIO | Type | Notes |
+|-----------|------|------|-------|
+| Entry Button | 25 | Input | Active low, internal pull-up |
+| Entry Light Barrier | 23 | Input | LOW = car detected |
+| Entry Barrier Servo | 22 | PWM | LEDC Channel 0 |
+| Exit Light Barrier | 4 | Input | LOW = car detected |
+| Exit Barrier Servo | 2 | PWM | LEDC Channel 1 |
 
 ### Servo Motors
-The barrier gates are controlled by servo motors using PWM signals:
+
+The barrier gates use servo motors with PWM signals:
 - **Frequency**: 50Hz (standard servo)
-- **Closed Position (90°)**: 1.5ms pulse width (LOW state) - Barrier vertical
-- **Open Position (0°)**: 1ms pulse width (HIGH state) - Barrier horizontal
-- **PWM Generation**: ESP32 LEDC (LED Controller) with 14-bit resolution
+- **Closed (90°)**: 1.5ms pulse - Barrier vertical
+- **Open (0°)**: 1ms pulse - Barrier horizontal
+- **PWM Generation**: ESP32 LEDC with 14-bit resolution
 
 ## Architecture
 
@@ -166,17 +168,17 @@ graph LR
     class Test,EC2,MockGate,MockButton test
 ```
 
-**Key Design Principles:**
+### Key Design Principles
 
 - **Config-Based Construction**: Controllers accept config structs with all GPIO pins and settings
 - **Ownership Hierarchy**: Controllers own their Gate hardware (Button, LightBarrier, Motor)
-- **Clean Separation**: ParkingGarageSystem doesn't manage low-level GPIO - only controllers and services
+- **Clean Separation**: ParkingGarageSystem manages only controllers and services, not low-level GPIO
 - **Dual Constructors**: Production mode creates hardware, test mode accepts mocks
 - **Interrupt Setup**: Controllers configure their own GPIO interrupts via `setupGpioInterrupts()`
 
 ### State Machines
 
-#### Entry Gate State Machine
+#### Entry Gate
 
 ```mermaid
 stateDiagram-v2
@@ -186,24 +188,12 @@ stateDiagram-v2
     CheckingCapacity --> IssuingTicket : Capacity Available
     CheckingCapacity --> Idle : Parking Full
     IssuingTicket --> OpeningBarrier : Ticket Issued
-    IssuingTicket --> Idle : Issue Failed
-    OpeningBarrier --> WaitingForCar : Barrier Timeout (opened)
+    OpeningBarrier --> WaitingForCar : Barrier Opened
     WaitingForCar --> CarPassing : Light Barrier Blocked
     CarPassing --> WaitingBeforeClose : Light Barrier Cleared
-    WaitingBeforeClose --> ClosingBarrier : 2 Second Timeout
-    ClosingBarrier --> Idle : Barrier Timeout (closed)
+    WaitingBeforeClose --> ClosingBarrier : delay
+    ClosingBarrier --> Idle : Barrier Closed
 ```
-
-**States**:
-- **Idle**: Waiting for entry button press
-- **CheckingCapacity**: Verifying parking availability
-- **IssuingTicket**: Creating new ticket for driver
-- **OpeningBarrier**: Motor opening barrier (HIGH)
-- **WaitingForCar**: Barrier open, waiting for vehicle
-- **CarPassing**: Vehicle passing through light barrier
-- **WaitingBeforeClose**: 2-second safety delay after car passed
-- **ClosingBarrier**: Motor closing barrier (LOW)
-
 **Events**:
 - `EntryButtonPressed` → Trigger capacity check
 - `CapacityFull` → Reject entry
@@ -212,22 +202,21 @@ stateDiagram-v2
 - `EntryLightBarrierCleared` → Car passed
 - `BarrierTimeout` → Barrier movement complete
 
-#### Exit Gate State Machine
+#### Exit Gate
 
 ```mermaid
 stateDiagram-v2
     [*] --> Idle
 
-    Idle --> ValidatingTicket : ticket_validate command
-    ValidatingTicket --> OpeningBarrier : Validation Success (paid)
-    ValidatingTicket --> Idle : Validation Failed (unpaid/not found)
-    OpeningBarrier --> WaitingForCarToPass : Barrier Timeout (opened)
+    Idle --> ValidatingTicket : ticket validate command
+    ValidatingTicket --> OpeningBarrier : Ticket Paid
+    ValidatingTicket --> Idle : Ticket Unpaid/Invalid
+    OpeningBarrier --> WaitingForCarToPass : Barrier Opened
     WaitingForCarToPass --> CarPassing : Light Barrier Blocked
     CarPassing --> WaitingBeforeClose : Light Barrier Cleared
-    WaitingBeforeClose --> ClosingBarrier : 2 Second Timeout
-    ClosingBarrier --> Idle : Barrier Timeout (closed)
+    WaitingBeforeClose --> ClosingBarrier : delay
+    ClosingBarrier --> Idle : Barrier Closed
 ```
-
 **States**:
 - **Idle**: Waiting for manual ticket validation command
 - **ValidatingTicket**: Checking ticket payment status
@@ -237,99 +226,8 @@ stateDiagram-v2
 - **WaitingBeforeClose**: 2-second safety delay after car exited
 - **ClosingBarrier**: Motor closing barrier (LOW)
 
-**Events/Commands**:
-- `ticket_validate <id>` → Start validation (manual command)
-- `TicketValidated` → Ticket is paid, proceed
-
-## Lint & Format
-
-- Tools:
-    - `clang-format`: sorgt für konsistente Formatierung.
-    - `clang-tidy`: optionale statische Analyse (aktuell manuell deaktiviert).
-
-- Konfigurationsdateien:
-    - `.clang-format` (LLVM-basiert, minimaler Diff zum bestehenden Stil)
-    - `.clang-tidy` (Analyzer/Bugprone/Readability/Modernize/Performance; einige laute Checks deaktiviert)
-
-- VS Code Tasks:
-    - `Lint - build compile_commands`: erzeugt `build/compile_commands.json`.
-    - `Lint - gen tidy db`: generiert gefilterte `build/compile_commands_tidy/compile_commands.json` für `clang-tidy`.
-    - `Lint - format`: formatiert alle Projektdateien (exkl. `build/`, `bootloader/`, `esp-idf/`).
-    - `Lint - tidy`: führt `run-clang-tidy` auf allen Projektdateien aus (nutzt die gefilterte DB).
-    - `Lint - tidy (changed)`: führt `clang-tidy` nur auf geänderten Projektdateien aus.
-
-- Git Hooks:
-    - `pre-commit`: prüft Format (`clang-format --dry-run --Werror`) auf gestagten Dateien.
-    - `pre-push`: `clang-tidy` ist standardmäßig deaktiviert. Aktivieren mit `ENABLE_TIDY=1` beim Push.
-        - Beispiel: `ENABLE_TIDY=1 git push`
-
-- CI (GitHub Actions):
-    - `.github/workflows/lint.yml`: `clang-format` aktiv; `clang-tidy` ist deaktiviert.
-    - `.github/workflows/tidy.yml`: manueller Workflow (Actions → "Run workflow"), führt `clang-tidy` bei Bedarf aus.
-
-- Docker
-    - `Dockerfile` stellt Tooling bereit (clang-format, clang-tidy, cmake, python3, git). `ENABLE_TIDY=0` per Default.
-    - Nutzung:
-        ```zsh
-        docker build -t pgcs-tools .
-        docker run --rm -it -v "$PWD":/workspace pgcs-tools bash
-        # Im Container
-        cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-        python3 tools/gen_tidy_compile_commands.py
-        run-clang-tidy -p build/compile_commands_tidy -header-filter='^(main|components|examples|test)/' -j $(nproc)
-        ```
-
-### Schnellstart lokal
-```zsh
-# Formatieren
-# VS Code Task: "Lint - format"
-
-# Tidy optional (manuell)
-# VS Code Task: "Lint - gen tidy db" → "Lint - tidy"
-```
-- `TicketRejected` → Ticket unpaid or invalid, deny exit
-- `ExitLightBarrierBlocked` → Car enters barrier area
-- `ExitLightBarrierCleared` → Car exited
-- `BarrierTimeout` → Barrier movement complete
-
-## Build and Flash
-
-### Prerequisites
-
-- ESP-IDF v5.0 or later
-- ESP32 development board
-
-### Build
-
-```bash
-# Set up ESP-IDF environment
-. $IDF_PATH/export.sh
-
-# Configure project (optional)
-idf.py menuconfig
-
-# Build
-idf.py build
-
-# Flash
-idf.py -p /dev/ttyUSB0 flash monitor
-```
-
-### Configuration
-
-Use `idf.py menuconfig` to configure:
-- **GPIO pins**: "Parking Garage Control System Configuration" → "GPIO Configuration"
-- **Capacity**: Choose Test Mode (5 spaces) or Production Mode (2000 spaces)
-- **Timings**: Barrier timeout, button debounce
-  - **Safety Delay**: 2-second wait after car passes before closing barrier (hardcoded)
-
-## Demo
-![Demo](demo.gif)
-
 ## Console Commands
-
 Available commands in the ESP console:
-
 ```
 === Parking Garage Control System ===
 
@@ -339,189 +237,164 @@ Available Commands:
   ticket pay <id>           - Pay ticket
   ticket validate <id>      - Validate ticket for exit
   publish <event>           - Publish event (use 'list')
-  gpio                      - GPIO read/write (use for usage)
-  test <entry|exit|full|info>  - Hardware test guides
-  ?                         - Show this help
-  help                      - Show ESP-IDF help
-  clear                     - Clear screen
+  gpio                      - GPIO read/write
+  test <entry|exit|full>    - Hardware test guides
+  help                      - Show help
   restart                   - Restart system
 ```
 
 ### GPIO Control
 
-The `gpio` command allows direct hardware access and simulation:
-
 ```bash
-# Read GPIO states
-ParkingGarage> gpio read entry button    # Read entry button (GPIO 25)
-ParkingGarage> gpio read entry barrier   # Read entry light barrier (GPIO 23)
-ParkingGarage> gpio read exit barrier    # Read exit light barrier (GPIO 4)
+# Read states
+gpio read entry button      # Read entry button (GPIO 25)
+gpio read entry barrier     # Read entry light barrier (GPIO 23)
+gpio read exit barrier      # Read exit light barrier (GPIO 4)
 
-# Control barrier motors (direct hardware)
-ParkingGarage> gpio write entry motor open   # Open entry barrier (GPIO 22)
-ParkingGarage> gpio write entry motor close  # Close entry barrier
-ParkingGarage> gpio write exit motor open    # Open exit barrier (GPIO 2)
-ParkingGarage> gpio write exit motor close   # Close exit barrier
+# Control motors
+gpio write entry motor open   # Open entry barrier
+gpio write entry motor close  # Close entry barrier
+gpio write exit motor open    # Open exit barrier
+gpio write exit motor close   # Close exit barrier
 
 # Simulate inputs (via events)
-ParkingGarage> gpio write entry button pressed     # Simulate button press
-ParkingGarage> gpio write entry barrier blocked    # Simulate car blocking entry
-ParkingGarage> gpio write entry barrier cleared    # Simulate car passing entry
-ParkingGarage> gpio write exit barrier blocked     # Simulate car blocking exit
-ParkingGarage> gpio write exit barrier cleared     # Simulate car passing exit
+gpio write entry button pressed      # Simulate button press
+gpio write entry barrier blocked     # Simulate car at entry
+gpio write entry barrier cleared     # Simulate car passed entry
+gpio write exit barrier blocked      # Simulate car at exit
+gpio write exit barrier cleared      # Simulate car passed exit
 ```
 
-### Event Publishing
-
-The `publish` command allows you to trigger events directly:
+### Example: Complete Entry/Exit Flow
 
 ```bash
-# List all available events
-ParkingGarage> publish list
-
-=== Available Events ===
-
-Entry Gate Events:
-  EntryButtonPressed        - Simulate entry button press
-  EntryLightBarrierBlocked  - Block entry light barrier
-  EntryLightBarrierCleared  - Clear entry light barrier
-
-Exit Gate Events:
-  ExitLightBarrierBlocked   - Block exit light barrier
-  ExitLightBarrierCleared   - Clear exit light barrier
-
-# Publish a specific event
-ParkingGarage> publish EntryButtonPressed
-Publishing event: EntryButtonPressed
-```
-
-### Example Usage
-
-📖 **Detaillierte Console-Workflow Beispiele:** [examples/README.md](examples/README.md#-console-workflow-examples)
-
-**Kurzbeispiel - Vollständiger Entry/Exit Flow:**
-```bash
-ParkingGarage> publish EntryButtonPressed     # Ticket #1 wird erstellt, Schranke öffnet
-ParkingGarage> ticket pay 1                   # Ticket bezahlen
-ParkingGarage> ticket validate 1              # Ticket validieren, Ausfahrt-Schranke öffnet
-ParkingGarage> publish ExitLightBarrierBlocked  # Auto fährt aus
+publish EntryButtonPressed           # Ticket #1 created, barrier opens
+publish EntryLightBarrierBlocked     # Car detected
+publish EntryLightBarrierCleared     # Car passed, barrier closes
+ticket pay 1                         # Pay ticket
+ticket validate 1                    # Validate ticket, exit barrier opens
+publish ExitLightBarrierBlocked      # Car exiting
+publish ExitLightBarrierCleared      # Car exited, barrier closes
 ```
 
 ## Testing
 
-📖 **Vollständige Test-Dokumentation:** [test/README.md](test/README.md)
+| Type | Location | Runs On | Purpose |
+|------|----------|---------|---------|
+| **Host Tests** | `test/unit-tests/` | PC (g++) | Fast logic tests with mocks |
+| **Unity HW Tests** | `test/unity-hw-tests/` | ESP32/Wokwi | Hardware integration tests |
+| **Wokwi Simulation** | `test/wokwi-tests/` | Wokwi CI | Full system simulation |
 
-### Kurzübersicht
-
-| Typ | Ort | Läuft auf | Zweck |
-|-----|-----|-----------|-------|
-| **Unit Tests (Mocks)** | `test/*.cpp` | Host (PC) | Schnelle Logik-Tests |
-| **Wokwi Simulation** | `test/wokwi-tests/*.yaml` | Wokwi CI | Hardware-Simulation |
-| **Unity HW Tests** | `components/parking_system/test/` | ESP32 | Echte Hardware |
-
-### Schnellstart
+### Run Tests
 
 ```bash
-# Unit Tests bauen und ausführen (< 1 Sekunde)
-./test/bin_test_entry_gate
-./test/bin_test_exit_gate
+# Host tests (fast, no hardware needed)
+make test-host
 
-# Wokwi Simulation
-```bash
-# Run all Wokwi CLI tests
-idf.py build
+# Host tests with coverage
+make coverage-run
+open build-host/coverage.html
+
+# Unity hardware tests (requires ESP32 or Wokwi)
+make test-unity-wokwi
+
+# Wokwi simulation tests
+idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci" build 
+or
+make build-ci
+
 export WOKWI_CLI_TOKEN=wok_xxx
 wokwi-cli --scenario test/wokwi-tests/console_full.yaml
-wokwi-cli --scenario test/wokwi-tests/entry_exit_flow.yaml
-wokwi-cli --scenario test/wokwi-tests/full_capacity.yaml
 ```
 
-# Hardware Tests
-idf.py -T parking_system build && idf.py flash monitor
-```
+For detailed test documentation, see [test/README.md](test/README.md).
 
-## State Machine Examples
+## CI/CD Workflows
 
-📖 **Vollständige Beispiel-Dokumentation:** [examples/README.md](examples/README.md)
+| Workflow | Trigger | Description |
+|----------|---------|-------------|
+| **Build** | Push/PR | Build firmware with ESP-IDF |
+| **Host Tests** | Push/PR | Run unit tests with coverage |
+| **Unity HW Tests** | Push/PR | Run hardware tests on Wokwi |
+| **Wokwi Tests** | Manual | Full simulation tests |
+| **Format** | Push/PR | Check code formatting |
+| **Tidy** | Manual | Run clang-tidy analysis |
+| **Docs** | Push to main | Generate and deploy Doxygen docs |
+| **Release** | Tag `vX.Y.Z` | Create release with artifacts |
 
-Dieses Projekt enthält zwei State Machine Implementierungen:
+> Tip: For local GitHub Actions testing, see `ACT.md`.
 
-| Pattern | Beschreibung | Best for |
-|---------|--------------|----------|
-| **HAL State Machine** | Interface-basiert, Dependency Injection | Einfache Systeme |
-| **Event-Driven** | Publisher-Subscriber, Zero Hardware Dependencies | Komplexe Systeme |
+## Documentation
 
-**Quick Start:**
+- Generated via Doxygen and deployed to GitHub Pages
+- Link: https://0xfischer.github.io/parking_garage_control_system/
+
+## Devcontainer
+
+A devcontainer image with all tools is available:
+
 ```bash
-# HAL State Machine
-cd examples/hal_state_machine && g++ -std=c++20 *.cpp -o hal_example && ./hal_example
+# Push to GHCR
+GITHUB_TOKEN=ghp_xxx tools/release_devcontainer_to_github.sh
 
-# Event-Driven State Machine
-cd examples/event_driven_state_machine && g++ -std=c++20 *.cpp -o event_example && ./event_example
+# With tag
+GITHUB_TOKEN=ghp_xxx tools/release_devcontainer_to_github.sh --tag v5.5
+
+tools/release_devcontainer_to_github.sh --tag v5.2.2 --image ghcr.io/0xfischer/parking_garage_control_system-dev:latest
 ```
 
 ## Project Structure
 
 ```
 parking_garage_control_system/
-├── components/
-│   └── parking_system/           # Main component
-│       ├── include/
-│       │   ├── events/           # Event system (IEventBus, FreeRtosEventBus)
-│       │   ├── gates/            # Gate controllers & abstractions
-│       │   │   ├── EntryGateController.h    # Entry gate FSM + config
-│       │   │   ├── ExitGateController.h     # Exit gate FSM + config
-│       │   │   ├── Gate.h                   # Owns Button/LightBarrier/Motor
-│       │   │   └── IGate.h                  # Gate interface
-│       │   ├── hal/              # Hardware Abstraction Layer
-│       │   │   ├── IGpioInput.h            # Input interface
-│       │   │   ├── IGpioOutput.h           # Output interface
-│       │   │   ├── EspGpioInput.h          # ESP32 GPIO input
-│       │   │   └── EspServoOutput.h        # ESP32 servo control
-│       │   ├── tickets/          # Ticket service
-│       │   └── parking/          # Main orchestrator
-│       │       └── ParkingGarageSystem.h   # Creates controllers & services
-│       └── src/                  # Implementation files
-├── test/
-│   ├── mocks/                    # Mock implementations
-│   │   ├── MockGate.h            # Gate mock
-│   │   ├── MockGpioInput.h       # GPIO input mock
-│   │   ├── MockEventBus.h        # Event bus mock
-│   │   └── MockTicketService.h   # Ticket service mock
-│   ├── stubs/                    # FreeRTOS/ESP-IDF stubs for PC builds
-│   │   ├── freertos/             # FreeRTOS headers
-│   │   └── driver/               # ESP driver headers
-│   ├── test_entry_gate.cpp       # Entry gate unit tests (4 tests)
-│   └── test_exit_gate.cpp        # Exit gate unit tests (4 tests)
+├── components/parking_system/
+│   ├── include/
+│   │   ├── events/       # IEventBus, FreeRtosEventBus
+│   │   ├── gates/        # Gate controllers & abstractions
+│   │   ├── hal/          # Hardware Abstraction Layer
+│   │   ├── tickets/      # Ticket service
+│   │   └── parking/      # Main orchestrator
+│   └── src/              # Implementation files
 ├── main/
-│   ├── main.cpp                  # Application entry point
-│   ├── console_commands.cpp      # Console command handlers
-│   └── Kconfig.projbuild         # Configuration menu
+│   ├── main.cpp          # Application entry point
+│   └── console_commands.cpp
+├── test/
+│   ├── unit-tests/       # Host unit tests
+│   ├── unity-hw-tests/   # ESP32 hardware tests
+│   ├── wokwi-tests/      # Wokwi simulation scenarios
+│   └── mocks/            # Mock implementations
 ├── examples/
-│   ├── hal_state_machine/        # Simple HAL pattern example
-│   └── event_driven_state_machine/  # Advanced event-driven pattern
-└── CMakeLists.txt
+│   ├── hal_state_machine/
+│   └── event_driven_state_machine/
+└── .github/workflows/    # CI/CD pipelines
 ```
 
-### Key Files
+## Lint & Format
 
-**Production Code:**
-- [ParkingGarageSystem.cpp](components/parking_system/src/parking/ParkingGarageSystem.cpp) - Main orchestrator, creates controllers with config structs
-- [EntryGateController.cpp](components/parking_system/src/gates/EntryGateController.cpp) - Entry gate FSM, owns Gate hardware
-- [ExitGateController.cpp](components/parking_system/src/gates/ExitGateController.cpp) - Exit gate FSM, owns Gate hardware
-- [Gate.cpp](components/parking_system/src/gates/Gate.cpp) - Gate abstraction (Button, LightBarrier, Motor)
+- **clang-format**: Code formatting (configured in `.clang-format`)
+- **clang-tidy**: Static analysis (configured in `.clang-tidy`)
 
-**Test Code:**
-- [test_entry_gate.cpp](test/test_entry_gate.cpp) - Entry gate tests using mocks
-- [test_exit_gate.cpp](test/test_exit_gate.cpp) - Exit gate tests using mocks
-- [MockGate.h](test/mocks/MockGate.h) - Gate mock for testing
+```bash
+# Format code
+make format
+make format-check
+make format-changed
 
+# Run clang-tidy (requires compile_commands.json)
+make lint-tidy
+make lint-tidy-changed
+```
+
+Git hooks:
+- `pre-commit`: Checks formatting on staged files
+- `pre-push`: Optional clang-tidy (`ENABLE_TIDY=1 git push`)
 
 ## License
 
 MIT License
 
 ## Author
+
 Eugen Fischer
 
 Created with Claude Code

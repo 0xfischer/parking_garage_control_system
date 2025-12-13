@@ -37,3 +37,4 @@ bin/
 .env
 .secrets
 build-host/
+.github/workflows/build-devcontainer.yml

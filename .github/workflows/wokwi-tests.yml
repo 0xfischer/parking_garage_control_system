@@ -6,35 +6,34 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
-      options: --user root
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build firmware
-        run: |
-          . $IDF_PATH/export.sh
-          idf.py build
+      - name: Build with ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.5
+          target: esp32
+          command: idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci" build
 
       - name: Run console_full Test
-        env:
-          WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
-        run: |
-          /home/develop/bin/wokwi-cli --scenario test/wokwi-tests/console_full.yaml --timeout 300000
+        uses: wokwi/wokwi-ci-action@v1
+        with:
+          token: ${{ secrets.WOKWI_CLI_TOKEN }}
+          timeout: 300000
+          scenario: test/wokwi-tests/console_full.yaml
 
       - name: Run entry_exit_flow Test
-        env:
-          WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
-        run: |
-          /home/develop/bin/wokwi-cli --scenario test/wokwi-tests/entry_exit_flow.yaml --timeout 300000
+        uses: wokwi/wokwi-ci-action@v1
+        with:
+          token: ${{ secrets.WOKWI_CLI_TOKEN }}
+          timeout: 300000
+          scenario: test/wokwi-tests/entry_exit_flow.yaml
 
       - name: Run parking_full Test
-        env:
-          WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
-        run: |
-          /home/develop/bin/wokwi-cli --scenario test/wokwi-tests/parking_full.yaml --timeout 300000
+        uses: wokwi/wokwi-ci-action@v1
+        with:
+          token: ${{ secrets.WOKWI_CLI_TOKEN }}
+          timeout: 300000
+          scenario: test/wokwi-tests/parking_full.yaml

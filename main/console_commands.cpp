@@ -554,6 +554,8 @@ void console_init(ParkingGarageSystem* system) {
         .hint = nullptr,
         .func = &cmd_status,
         .argtable = nullptr,
+        .func_w_context = nullptr,
+        .context = nullptr,
     };
     esp_console_cmd_register(&status_cmd);
 
@@ -563,6 +565,8 @@ void console_init(ParkingGarageSystem* system) {
         .hint = nullptr,
         .func = &cmd_ticket,
         .argtable = nullptr,
+        .func_w_context = nullptr,
+        .context = nullptr,
     };
     esp_console_cmd_register(&ticket_cmd);
 
@@ -572,6 +576,8 @@ void console_init(ParkingGarageSystem* system) {
         .hint = nullptr,
         .func = &cmd_publish,
         .argtable = nullptr,
+        .func_w_context = nullptr,
+        .context = nullptr,
     };
     esp_console_cmd_register(&publish_cmd);
 
@@ -581,6 +587,8 @@ void console_init(ParkingGarageSystem* system) {
         .hint = nullptr,
         .func = &cmd_gpio,
         .argtable = nullptr,
+        .func_w_context = nullptr,
+        .context = nullptr,
     };
     esp_console_cmd_register(&gpio_cmd);
 
@@ -590,6 +598,8 @@ void console_init(ParkingGarageSystem* system) {
         .hint = nullptr,
         .func = &cmd_help,
         .argtable = nullptr,
+        .func_w_context = nullptr,
+        .context = nullptr,
     };
     esp_console_cmd_register(&help_cmd);
 
@@ -599,6 +609,8 @@ void console_init(ParkingGarageSystem* system) {
         .hint = nullptr,
         .func = &cmd_test,
         .argtable = nullptr,
+        .func_w_context = nullptr,
+        .context = nullptr,
     };
     esp_console_cmd_register(&test_cmd);
 
@@ -608,6 +620,8 @@ void console_init(ParkingGarageSystem* system) {
         .hint = nullptr,
         .func = &cmd_parkgarage,
         .argtable = nullptr,
+        .func_w_context = nullptr,
+        .context = nullptr,
     };
     esp_console_cmd_register(&parkgarage_cmd);
 

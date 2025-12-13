@@ -1,0 +1,55 @@
+name: Complete Entry + Exit Flow (Hardware)
+version: 1
+
+steps:
+  - wait-serial: "Console ready"
+
+  # === ENTRY: Car arrives and presses button ===
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 0
+  - delay: 100ms
+  - set-control:
+      part-id: btn-entry
+      control: pressed
+      value: 1
+  - wait-serial: "Ticket issued"
+  - wait-serial: "OpeningBarrier"
+  - delay: 600ms
+
+  # Car passes entry light barrier
+  - set-control:
+      part-id: light-entry
+      control: value
+      value: 1
+  - wait-serial: "CarPassing"
+  - set-control:
+      part-id: light-entry
+      control: value
+      value: 0
+  - wait-serial: "ClosingBarrier"
+  - wait-serial: "Idle"
+
+  # === PAYMENT: Pay and validate ticket via console ===
+  - write-serial: "ticket pay 1\r\n"
+  - wait-serial: "paid successfully"
+  - write-serial: "ticket validate 1\r\n"
+  - wait-serial: "validated successfully"
+
+  # === EXIT: Barrier opens after validation ===
+  - wait-serial: "OpeningBarrier"
+  - delay: 600ms
+
+  # Car passes exit light barrier
+  - set-control:
+      part-id: light-exit
+      control: value
+      value: 1
+  - wait-serial: "CarPassing"
+  - set-control:
+      part-id: light-exit
+      control: value
+      value: 0
+  - wait-serial: "ClosingBarrier"
+  - wait-serial: "Idle"

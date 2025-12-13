@@ -34,6 +34,17 @@ class EspGpioInput : public IGpioInput {
     void enableInterrupt() override;
     void disableInterrupt() override;
 
+    /**
+     * @brief Simulate an interrupt for testing purposes
+     *
+     * Directly calls the interrupt handler with the given level,
+     * bypassing actual GPIO hardware. Useful for Wokwi tests where
+     * direct GPIO manipulation doesn't trigger ISR.
+     *
+     * @param level The level to report (true=HIGH, false=LOW)
+     */
+    void simulateInterrupt(bool level);
+
   private:
     static IRAM_ATTR void gpioIsrHandler(void* arg);
     void handleInterrupt();

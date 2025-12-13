@@ -30,6 +30,8 @@ class TicketService : public ITicketService {
     [[nodiscard]] bool getTicketInfo(uint32_t ticketId, Ticket& ticket) const override;
     [[nodiscard]] uint32_t getActiveTicketCount() const override;
     [[nodiscard]] uint32_t getCapacity() const override;
+    void reset() override;
+    void setCapacity(uint32_t capacity) override;
 
   private:
     uint32_t m_capacity;

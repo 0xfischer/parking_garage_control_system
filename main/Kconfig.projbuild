@@ -66,9 +66,10 @@ menu "Parking Garage Control System Configuration"
         endchoice
 
         config PARKING_CAPACITY
-            int "Parking Capacity" if PARKING_CAPACITY_CUSTOM
+            int "Parking Capacity"
             default 5 if PARKING_CAPACITY_TEST
             default 2000 if PARKING_CAPACITY_PRODUCTION
+            default 100
             range 1 10000
             help
                 Maximum number of parking spaces.

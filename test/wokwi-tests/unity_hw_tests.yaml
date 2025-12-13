@@ -1,0 +1,9 @@
+name: Unity Hardware Tests
+version: 1
+
+steps:
+  - wait-serial: "Unity Hardware Tests"
+  # Tests run automatically (no menu interaction needed)
+  # 6 Entry tests + 4 Exit tests = 10 total
+  - wait-serial: "10 Tests 0 Failures"
+  - wait-serial: "Tests Complete"

@@ -1,0 +1,25 @@
+name: Full Entry + Payment + Exit via Console
+version: 1
+
+steps:
+  - wait-serial: "Console ready"
+  - write-serial: "publish EntryButtonPressed\r\n"
+  - wait-serial: "Ticket issued"
+  - wait-serial: "OpeningBarrier"
+  - wait-serial: "WaitingForCar"
+  - write-serial: "publish EntryLightBarrierBlocked\r\n"
+  - wait-serial: "CarPassing"
+  - write-serial: "publish EntryLightBarrierCleared\r\n"
+  - wait-serial: "ClosingBarrier"
+  - wait-serial: "Idle"
+  - write-serial: "ticket pay 1\r\n"
+  - wait-serial: "paid successfully"
+  - write-serial: "ticket validate 1\r\n"
+  - wait-serial: "validated successfully"
+  - wait-serial: "OpeningBarrier"
+  - wait-serial: "WaitingForCarToPass"
+  - write-serial: "publish ExitLightBarrierBlocked\r\n"
+  - wait-serial: "CarPassing"
+  - write-serial: "publish ExitLightBarrierCleared\r\n"
+  - wait-serial: "ClosingBarrier"
+  - wait-serial: "Idle"

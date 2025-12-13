@@ -96,3 +96,19 @@ void ParkingGarageSystem::getStatus(char* buffer, size_t bufferSize) const {
              m_entryGate->getStateString(),
              m_exitGate->getStateString());
 }
+
+void ParkingGarageSystem::reset() {
+    ESP_LOGI(TAG, "Resetting ParkingGarageSystem...");
+
+    // Reset controllers first (stops timers, closes gates)
+    m_entryGate->reset();
+    m_exitGate->reset();
+
+    // Reset ticket service (clears all tickets)
+    m_ticketService->reset();
+
+    // Small delay to ensure all operations complete
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    ESP_LOGI(TAG, "ParkingGarageSystem reset complete");
+}

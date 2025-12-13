@@ -1,0 +1,86 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ESP32 Debug (Wokwi)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/parking_garage_control_system.elf",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "${env:HOME}/.espressif-5.2/tools/tools/xtensa-esp-elf-gdb/14.2_20240403/xtensa-esp-elf-gdb/bin/xtensa-esp32-elf-gdb",
+            "miDebuggerServerAddress": "localhost:3333",
+            "stopAtEntry": false,
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "set remote hardware-watchpoint-limit 2"
+                },
+                {
+                    "text": "set pagination off"
+                },
+                {
+                    "text": "set remotetimeout 60"
+                },
+                {
+                    "text": "thb app_main"
+                }
+            ],
+            "logging": {
+                "engineLogging": false,
+                "trace": false,
+                "traceResponse": false
+            },
+            "preLaunchTask": "Build - IDF",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "ESP32 Attach (OpenOCD)",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "${workspaceFolder}/build/parking_garage_control_system.elf",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "${env:HOME}/.espressif/tools/xtensa-esp32-elf/esp-13.2.0_20230928/xtensa-esp32-elf/bin/xtensa-esp32-elf-gdb",
+            "miDebuggerServerAddress": "localhost:3333",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "set remote hardware-watchpoint-limit 2"
+                }
+            ],
+            "logging": {
+                "engineLogging": false
+            }
+        },
+        {
+            "name": "ESP32 GDB Stub (Serial)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/parking_garage_control_system.elf",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "${env:HOME}/.espressif/tools/xtensa-esp32-elf/esp-13.2.0_20230928/xtensa-esp32-elf/bin/xtensa-esp32-elf-gdb",
+            "stopAtEntry": false,
+            "setupCommands": [
+                {
+                    "text": "set serial baud 115200"
+                },
+                {
+                    "text": "target remote /dev/ttyUSB0"
+                },
+                {
+                    "text": "mon reset"
+                }
+            ]
+        }
+    ]
+}

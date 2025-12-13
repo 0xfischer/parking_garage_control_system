@@ -1,18 +1,7 @@
 name: Wokwi Hardware Tests
 
 on:
-  workflow_dispatch:  # Manual trigger only
-    inputs:
-      test_scenario:
-        description: 'Test scenario to run'
-        required: false
-        default: 'all'
-        type: choice
-        options:
-          - all
-          - entry
-          - exit
-          - capacity
+  workflow_dispatch:
 
 jobs:
   build:
@@ -21,83 +10,44 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup ESP-IDF
+      - name: Build with ESP-IDF
         uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: v5.2
+          esp_idf_version: v5.5
           target: esp32
+          command: idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci" build
 
-      - name: Build firmware
-        run: idf.py build
-
-      - name: Upload firmware artifact
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: firmware
+          name: wokwi-firmware
           path: |
             build/*.bin
             build/*.elf
             build/flasher_args.json
+            build/bootloader/*.bin
+            build/partition_table/*.bin
 
-  wokwi-entry-test:
+  test:
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: [console_full, entry_exit_flow, parking_full]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download firmware
+      - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: firmware
-          path: build/
+          name: wokwi-firmware
+          path: build
 
-      - name: Run Entry Flow Test
+      - name: Run ${{ matrix.scenario }} Test
         uses: wokwi/wokwi-ci-action@v1
         with:
           token: ${{ secrets.WOKWI_CLI_TOKEN }}
-          path: ./
-          timeout: 120000
-          scenario: test/wokwi/entry_flow.yaml
-
-  wokwi-exit-test:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download firmware
-        uses: actions/download-artifact@v4
-        with:
-          name: firmware
-          path: build/
-
-      - name: Run Exit Flow Test
-        uses: wokwi/wokwi-ci-action@v1
-        with:
-          token: ${{ secrets.WOKWI_CLI_TOKEN }}
-          path: ./
-          timeout: 180000
-          scenario: test/wokwi/exit_flow.yaml
-
-  wokwi-capacity-test:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download firmware
-        uses: actions/download-artifact@v4
-        with:
-          name: firmware
-          path: build/
-
-      - name: Run Parking Full Test
-        uses: wokwi/wokwi-ci-action@v1
-        with:
-          token: ${{ secrets.WOKWI_CLI_TOKEN }}
-          path: ./
           timeout: 300000
-          scenario: test/wokwi/parking_full.yaml
+          scenario: test/wokwi-tests/${{ matrix.scenario }}.yaml

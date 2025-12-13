@@ -6,9 +6,9 @@ This directory contains multiple test approaches for the parking garage system.
 
 | Type | Location | Runs On | Purpose |
 |------|----------|---------|---------|
-| **Unit Tests (Mocks)** | `test/*.cpp` | Host (PC) | Fast logic testing |
-| **Wokwi Simulation** | `test/wokwi/*.yaml` | Wokwi CI | Hardware simulation |
-| **Unity HW Tests** | `components/parking_system/test/` | ESP32 | Real hardware |
+| **Unit Tests (Mocks)** | `test/unit-tests/*.cpp` | Host (PC) | Fast logic testing |
+| **Wokwi Simulation** | `test/wokwi-tests/*.yaml` | Wokwi CI | Hardware simulation |
+| **Unity HW Tests** | `test/unity-hw-tests/` → mirrors `components/parking_system/test/` | ESP32 | Real hardware |
 
 ---
 
@@ -27,8 +27,8 @@ g++ -std=c++20 -DUNIT_TEST \
   -I components/parking_system/include/hal \
   -I components/parking_system/include/tickets \
   -I test/stubs -I test/mocks \
-  -o test/bin_test_entry_gate \
-  test/test_entry_gate.cpp \
+    -o test/bin_test_entry_gate \
+    test/unit-tests/test_entry_gate.cpp \
   components/parking_system/src/gates/EntryGateController.cpp \
   components/parking_system/src/tickets/TicketService.cpp \
   components/parking_system/src/events/FreeRtosEventBus.cpp \
@@ -44,8 +44,8 @@ g++ -std=c++20 -DUNIT_TEST \
   -I components/parking_system/include/hal \
   -I components/parking_system/include/tickets \
   -I test/stubs -I test/mocks \
-  -o test/bin_test_exit_gate \
-  test/test_exit_gate.cpp \
+    -o test/bin_test_exit_gate \
+    test/unit-tests/test_exit_gate.cpp \
   components/parking_system/src/gates/ExitGateController.cpp \
   components/parking_system/src/tickets/TicketService.cpp \
   components/parking_system/src/events/FreeRtosEventBus.cpp \
@@ -56,7 +56,7 @@ g++ -std=c++20 -DUNIT_TEST \
 
 ### Mock Implementations
 
-Located in `mocks/`:
+Located in `mocks/` (used only by `unit-tests/`):
 - **MockEventBus.h**: Synchronous event processing with `processAllPending()`
 - **MockGate.h**: Tracks open/close state
 - **MockGpioInput.h**: Simulates button/sensor inputs
@@ -74,9 +74,9 @@ Hardware simulation with virtual ESP32, buttons, servos, and switches.
 
 | Scenario | File | Description |
 |----------|------|-------------|
-| Entry Flow | `wokwi/entry_flow.yaml` | Complete entry gate cycle |
-| Exit Flow | `wokwi/exit_flow.yaml` | Entry + payment + exit |
-| Parking Full | `wokwi/parking_full.yaml` | Fill parking, test rejection |
+| Console Full | `wokwi-tests/console_full.yaml` | Complete console-driven workflow |
+| Entry/Exit Flow | `wokwi-tests/entry_exit_flow.yaml` | Hardware button + light barrier |
+| Parking Full | `wokwi-tests/parking_full.yaml` | Fill parking, test rejection |
 
 ### Run Locally
 
@@ -85,7 +85,7 @@ Hardware simulation with virtual ESP32, buttons, servos, and switches.
 idf.py build
 
 # Run with Wokwi CLI
-wokwi-cli --scenario test/wokwi/entry_flow.yaml
+wokwi-cli --scenario test/wokwi-tests/entry_exit_flow.yaml
 ```
 
 ### Run in VS Code
@@ -121,7 +121,7 @@ idf.py flash monitor
 
 ### Test Files
 
-Located in `components/parking_system/test/`:
+Located in `components/parking_system/test/` (mirrored in `test/unity-hw-tests/`):
 - **test_entry_gate_hw.cpp**: Entry gate with real GPIO
 - **test_exit_gate_hw.cpp**: Exit gate with real GPIO
 
@@ -151,7 +151,7 @@ ParkingGarage> test full     # Complete workflow guide
 
 ## Test Stubs
 
-Located in `stubs/`:
+Located in `stubs/` (used only by `unit-tests/`):
 - FreeRTOS headers for host compilation
 - ESP-IDF driver stubs (GPIO, LEDC)
 - Required define: `-DUNIT_TEST`

@@ -73,6 +73,12 @@ class ParkingGarageSystem {
      */
     void getStatus(char* buffer, size_t bufferSize) const;
 
+    /**
+     * @brief Reset system to initial state
+     * Resets all controllers and ticket service to clean state
+     */
+    void reset();
+
   private:
     // Event bus (must be first - other components depend on it)
     std::unique_ptr<FreeRtosEventBus> m_eventBus;

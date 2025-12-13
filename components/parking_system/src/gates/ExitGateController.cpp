@@ -56,6 +56,25 @@ void ExitGateController::setupGpioInterrupts() {
     ESP_LOGI(TAG, "Exit gate GPIO interrupts configured");
 }
 
+void ExitGateController::reset() {
+    // Stop timers if running
+    if (m_barrierTimer && xTimerIsTimerActive(m_barrierTimer)) {
+        xTimerStop(m_barrierTimer, 0);
+    }
+    if (m_validationTimer && xTimerIsTimerActive(m_validationTimer)) {
+        xTimerStop(m_validationTimer, 0);
+    }
+
+    // Reset state
+    m_state = ExitGateState::Idle;
+    m_currentTicketId = 0;
+
+    // Ensure barrier is closed
+    m_gate->close();
+
+    ESP_LOGI(TAG, "ExitGateController reset to Idle");
+}
+
 const char* ExitGateController::getStateString() const {
     switch (m_state) {
         case ExitGateState::Idle:
@@ -97,15 +116,14 @@ void ExitGateController::onLightBarrierBlocked(const Event& event) {
 void ExitGateController::onLightBarrierCleared(const Event& event) {
     (void) event;
     if (m_state == ExitGateState::CarPassing) {
-        ESP_LOGI(TAG, "Car exited parking, waiting 2 seconds before closing barrier");
+        ESP_LOGI(TAG, "Car exited parking, waiting %u ms before closing barrier", (unsigned) m_barrierTimeoutMs);
         m_eventBus.publish(Event(EventType::CarExitedParking, 0, m_currentTicketId));
 
-        // Wait 2 seconds before closing barrier
+        // Wait before closing barrier (uses configured timeout)
         setState(ExitGateState::WaitingBeforeClose);
 
-        // Start timer with 2 seconds delay
         if (m_barrierTimer) {
-            xTimerChangePeriod(m_barrierTimer, pdMS_TO_TICKS(2000), 0);
+            xTimerChangePeriod(m_barrierTimer, pdMS_TO_TICKS(m_barrierTimeoutMs), 0);
             xTimerReset(m_barrierTimer, 0);
         }
     }

@@ -2,33 +2,40 @@ name: Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
+    paths:
+      - 'components/**'
+      - 'main/**'
+      - 'CMakeLists.txt'
+      - 'sdkconfig.defaults'
+      - 'sdkconfig.ci'
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
+    paths:
+      - 'components/**'
+      - 'main/**'
+      - 'CMakeLists.txt'
+      - 'sdkconfig.defaults'
+      - 'sdkconfig.ci'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build'
+        required: false
+        default: 'main'
 
 jobs:
-  esp-idf-build:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache ESP-IDF tools
-        uses: actions/cache@v4
-        with:
-            path: ~/.espressif
-            key: ${{ runner.os }}-espressif-${{ hashFiles('**/sdkconfig', '**/sdkconfig.defaults') }}
-            restore-keys: |
-              ${{ runner.os }}-espressif-
-
-      - name: Setup ESP-IDF (Docker)
+      - name: Build with ESP-IDF
         uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: v5.2.2
-
-      - name: Build
-        run: |
-          idf.py build
+          esp_idf_version: v5.5
+          target: esp32
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -38,3 +45,4 @@ jobs:
             build/*.bin
             build/*.elf
             build/partition_table/*.csv
+            build/flasher_args.json

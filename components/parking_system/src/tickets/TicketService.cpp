@@ -143,3 +143,20 @@ uint32_t TicketService::getActiveTicketCount() const {
 uint32_t TicketService::getCapacity() const {
     return m_capacity;
 }
+
+void TicketService::reset() {
+    if (xSemaphoreTake(m_mutex, portMAX_DELAY) == pdTRUE) {
+        m_tickets.clear();
+        m_nextTicketId = 1;
+        ESP_LOGI(TAG, "TicketService reset: all tickets cleared");
+        xSemaphoreGive(m_mutex);
+    }
+}
+
+void TicketService::setCapacity(uint32_t capacity) {
+    if (xSemaphoreTake(m_mutex, portMAX_DELAY) == pdTRUE) {
+        m_capacity = capacity;
+        ESP_LOGI(TAG, "Capacity set to %lu", capacity);
+        xSemaphoreGive(m_mutex);
+    }
+}

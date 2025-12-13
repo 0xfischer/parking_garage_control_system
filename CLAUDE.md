@@ -16,9 +16,9 @@ ESP32-based parking garage control system with:
 | Component | GPIO Pin | Type | Notes |
 |-----------|----------|------|-------|
 | Entry Button | GPIO 25 | Input | Active low, debounced |
-| Entry Light Barrier | GPIO 23 | Input | HIGH = blocked (car detected) |
+| Entry Light Barrier | GPIO 23 | Input | LOW = blocked (car detected) |
 | Entry Servo | GPIO 22 | PWM Output | LEDC Channel 0 |
-| Exit Light Barrier | GPIO 4 | Input | HIGH = blocked (car detected) |
+| Exit Light Barrier | GPIO 4 | Input | LOW = blocked (car detected) |
 | Exit Servo | GPIO 2 | PWM Output | LEDC Channel 1 |
 
 **Important**: GPIO 2 has boot restrictions for inputs but works fine for PWM output.
@@ -295,15 +295,79 @@ void TEST_forceValidationTimeout(); // For ExitGateController
 ```
 
 ### Wokwi Simulation
-Test scenarios in `test/wokwi/`:
-- `entry_flow.yaml` - Complete entry sequence
-- `exit_flow.yaml` - Complete exit with paid ticket
-- `parking_full.yaml` - Capacity rejection test
+Test scenarios in `test/wokwi-tests/`:
+- `console_full.yaml` - Complete entry + payment + exit via console commands
+- `entry_exit_flow.yaml` - Hardware button + light barrier flow
+- `parking_full.yaml` - Capacity rejection test (requires longer timeout)
 
 Run locally:
 ```bash
 idf.py build
-wokwi-cli --scenario test/wokwi/entry_flow.yaml
+wokwi-cli --scenario test/wokwi-tests/console_full.yaml --timeout 60000
+```
+
+Run all Wokwi tests:
+```bash
+make test-wokwi-full
+```
+
+### Test Coverage
+
+#### Host Coverage (recommended)
+```bash
+# Generate coverage report
+make coverage-run
+
+# View HTML report
+open build-host/coverage.html
+```
+
+Current coverage (Host-Tests with Mocks):
+- `EntryGateController.cpp`: ~84%
+- `ExitGateController.cpp`: ~81%
+- HAL/Services: 0% (Mocks replace real implementations)
+
+Coverage files:
+- `build-host/coverage.html` - HTML report with line-by-line details
+
+#### ESP32 Coverage (requires JTAG hardware)
+
+**Note**: ESP32 gcov coverage requires JTAG/OpenOCD hardware. The gcov runtime
+(`__gcov_merge_add` etc.) is not available for Xtensa cross-compilation.
+Wokwi simulation cannot collect coverage data.
+
+For ESP32 coverage with JTAG, see:
+- [ESP-IDF Gcov Guide](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#gcov-source-code-coverage)
+- Example: `/opt/esp/idf/examples/system/gcov/`
+
+### Unity Hardware Tests
+
+Tests in `test/unity-hw-tests/`:
+- `test_entry_gate_hw.cpp` - Entry gate tests (EventBus + GPIO simulation)
+- `test_exit_gate_hw.cpp` - Exit gate tests (EventBus + GPIO simulation)
+- `test_common.cpp/.h` - Shared test infrastructure with GPIO constants
+
+These tests run on real ESP32 hardware or Wokwi simulation. They use:
+- **EventBus events** for portable tests
+- **`simulateInterrupt()`** for GPIO-driven tests (calls ISR handler directly)
+
+**GPIO Simulation Constants** (defined in `test_common.h`):
+```cpp
+GPIO_LIGHT_BARRIER_BLOCKED  // false (LOW) = car detected
+GPIO_LIGHT_BARRIER_CLEARED  // true (HIGH) = no car
+GPIO_BUTTON_PRESSED         // false (LOW) = pressed (active low)
+GPIO_BUTTON_RELEASED        // true (HIGH) = released
+```
+
+**Test Configuration** (`test_common.cpp`):
+- `barrierTimeoutMs = 500` (faster tests)
+- `capacity = 3` (to test "parking full" scenario)
+
+Run with Wokwi:
+```bash
+cd test/unity-hw-tests
+idf.py build
+wokwi-cli --timeout 120000 --scenario ../wokwi-tests/unity_hw_tests.yaml
 ```
 
 ### GitHub Actions CI
@@ -316,9 +380,11 @@ wokwi-cli --scenario test/wokwi/entry_flow.yaml
 GPIO 2 has boot restrictions on ESP32. Use it only for outputs (like servo PWM), not inputs.
 
 ### Light Barrier Logic
-- HIGH (1) = blocked = car detected
-- LOW (0) = clear = no car
-- Use `isCarDetected()` to check, not `getLevel()` directly
+The interrupt handler in `ParkingGarageSystem::initialize()` maps GPIO levels to events:
+- **LOW (0)** = blocked = car detected → publishes `LightBarrierBlocked`
+- **HIGH (1)** = clear = no car → publishes `LightBarrierCleared`
+
+Use `isCarDetected()` to check light barrier state, not `getLevel()` directly.
 
 ### Building with Console Commands
 Console workflow tests require additional stubs:

@@ -29,7 +29,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build (inside devcontainer image)
-        run: make build-local
+        run: |
+          . $IDF_PATH/export.sh
+          make build-local
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

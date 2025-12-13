@@ -1,10 +1,39 @@
 name: Wokwi Hardware Tests
 
 on:
-  workflow_dispatch:  # Manual trigger only
+  workflow_dispatch:
 
 jobs:
-  build-and-test:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
+      options: --user root
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build firmware
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wokwi-firmware
+          path: |
+            build/*.bin
+            build/*.elf
+            build/flasher_args.json
+            build/bootloader/*.bin
+            build/partition_table/*.bin
+
+  test:
+    needs: build
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
@@ -13,17 +42,18 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     strategy:
+      fail-fast: false
       matrix:
         scenario: [console_full, entry_exit_flow, parking_full]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build firmware
-        run: |
-          export IDF_PATH=/opt/esp/idf
-          . $IDF_PATH/export.sh
-          idf.py build
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wokwi-firmware
+          path: build
 
       - name: Run ${{ matrix.scenario }} Test
         env:

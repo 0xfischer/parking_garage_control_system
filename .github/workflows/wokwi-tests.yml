@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
@@ -21,42 +21,20 @@ jobs:
           . $IDF_PATH/export.sh
           idf.py build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: wokwi-firmware
-          path: |
-            build/*.bin
-            build/*.elf
-            build/flasher_args.json
-            build/bootloader/*.bin
-            build/partition_table/*.bin
-
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
-      options: --user root
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    strategy:
-      fail-fast: false
-      matrix:
-        scenario: [console_full, entry_exit_flow, parking_full]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: wokwi-firmware
-          path: build
-
-      - name: Run ${{ matrix.scenario }} Test
+      - name: Run console_full Test
         env:
           WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
         run: |
-          /home/develop/bin/wokwi-cli --scenario test/wokwi-tests/${{ matrix.scenario }}.yaml --timeout 300000
+          /home/develop/bin/wokwi-cli --scenario test/wokwi-tests/console_full.yaml --timeout 300000
+
+      - name: Run entry_exit_flow Test
+        env:
+          WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
+        run: |
+          /home/develop/bin/wokwi-cli --scenario test/wokwi-tests/entry_exit_flow.yaml --timeout 300000
+
+      - name: Run parking_full Test
+        env:
+          WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
+        run: |
+          /home/develop/bin/wokwi-cli --scenario test/wokwi-tests/parking_full.yaml --timeout 300000

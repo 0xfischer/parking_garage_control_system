@@ -21,6 +21,7 @@ fullclean:
 	@rm -rf build sdkconfig 2>/dev/null || true
 	@bash -c "cd test/unity-hw-tests && idf.py fullclean" || true
 	@rm -rf test/unity-hw-tests/build test/unity-hw-tests/sdkconfig 2>/dev/null || true
+	@rm -f build-host || true
 	@echo "✓ Clean complete"
 
 build-local:

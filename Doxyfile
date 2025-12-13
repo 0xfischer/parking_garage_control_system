@@ -28,8 +28,9 @@ WARN_IF_UNDOCUMENTED   = NO
 # Inputs
 INPUT                  = README.md components main examples
 FILE_PATTERNS          = *.h *.hpp *.c *.cpp *.md
-EXTENSION_MAPPING      = md=Markdown
+EXTENSION_MAPPING      = md=markdown
 USE_MDFILE_AS_MAINPAGE = README.md
+EXCLUDE_PATTERNS       = */test/* */examples/*/README.md
 
 # HTML output
 HTML_OUTPUT            = html

@@ -15,18 +15,15 @@ jobs:
   firmware-build:
     name: Build Firmware (ESP-IDF)
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
-      options: --user root
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build firmware (inside devcontainer image)
-        run: make build-local
+      - name: Build firmware with ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.5
+          target: esp32
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
@@ -38,8 +35,6 @@ jobs:
     name: Build Host Tests and Create Release
     needs: firmware-build
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
     permissions:
       contents: write
     steps:
@@ -52,8 +47,16 @@ jobs:
           name: firmware
           path: build/
 
-      - name: Build host tests (inside devcontainer image)
-        run: make test-local
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++
+
+      - name: Build and run host tests
+        run: |
+          cmake -S test -B build-host -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build-host
+          ctest --test-dir build-host --output-on-failure
 
       - name: Archive all artifacts
         run: |

@@ -1,7 +1,7 @@
 -include .env
 export
 
-.PHONY: test-local build-local format-check lint-check coverage-run act-test fullclean lint-tidy-db lint-tidy lint-tidy-changed wokwi-test wokwi-test-ci \
+.PHONY: test-local build-local build-ci format-check lint-check coverage-run act-test fullclean lint-tidy-db lint-tidy lint-tidy-changed wokwi-test wokwi-test-ci \
 	env-print env-example act-wokwi docker-release init test-wokwi-coverage build-coverage build-unity-tests test-unity-wokwi
 
 JOBS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
@@ -13,7 +13,7 @@ init:
 		exit 1; \
 	fi; \
 	echo "Sourcing ESP-IDF environment from $$IDF_PATH/export.sh..."; \
-	. $$IDF_PATH/export.sh && echo "ESP-IDF environment initialized successfully" && exec $$SHELL
+	@bash -c "export IDF_PATH_FORCE=1 && . $$IDF_PATH/export.sh && echo \"ESP-IDF environment initialized successfully\""
 
 fullclean:
 	@echo "=== Full clean ==="
@@ -26,23 +26,41 @@ fullclean:
 build-local:
 	@bash -c 'idf.py build'
 
+build-ci:
+	@rm -f sdkconfig
+	@bash -c 'idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci" build'
+
 test-host:
 	cmake -S test -B build-host -DCMAKE_BUILD_TYPE=Debug
 	cmake --build build-host
 	ctest --test-dir build-host --output-on-failure
 test-wokwi:
 	wokwi-cli --scenario test/wokwi-tests/parking_full.yaml
-test-wokwi-full:
-	wokwi-cli --scenario test/wokwi-tests/console_full.yaml
-	wokwi-cli --scenario test/wokwi-tests/entry_exit_flow.yaml
-	wokwi-cli --scenario test/wokwi-tests/parking_full.yaml
+test-wokwi-full: build-ci
+	@failed_tests=""
+	@for scenario in test/wokwi-tests/console_full.yaml test/wokwi-tests/entry_exit_flow.yaml test/wokwi-tests/parking_full.yaml; do \
+		echo "Running Wokwi test: $$scenario"; \
+		if ! wokwi-cli --scenario $$scenario; then \
+			echo "Test failed: $$scenario"; \
+			failed_tests="$$failed_tests $$scenario"; \
+		fi; \
+	done; \
+	if [ -n "$$failed_tests" ]; then \
+		echo "The following tests failed:"; \
+		for test in $$failed_tests; do \
+			echo " - $$test"; \
+		done; \
+		exit 1; \
+	else \
+		echo "All Wokwi tests passed successfully."; \
+	fi
 
 build-unity-tests:
 	@bash -c "cd test/unity-hw-tests && idf.py build"
 	@echo "Unity test firmware built in test/unity-hw-tests/build/"
 
 test-unity-wokwi: build-unity-tests
-	cd test/unity-hw-tests && wokwi-cli --timeout 120000 --scenario ../wokwi-tests/unity_hw_tests.yaml
+	cd test/unity-hw-tests && wokwi-cli --timeout 60000 --scenario ../wokwi-tests/unity_hw_tests.yaml
 
 
 # ESP32 Coverage Note:

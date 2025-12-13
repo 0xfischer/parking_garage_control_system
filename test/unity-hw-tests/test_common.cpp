@@ -16,14 +16,14 @@ static ParkingGarageSystem* s_system = nullptr;
  *
  * Uses shorter timeouts for faster test execution:
  * - barrierTimeoutMs: 500ms (instead of 2000ms)
- * - capacity: 3 (small to test "parking full" scenario)
+ * - capacity: 2 (small to test "parking full" scenario)
  */
 static ParkingGarageConfig createTestConfig() {
     ParkingGarageConfig config = ParkingGarageConfig::fromKconfig();
 
     // Override for faster tests
     config.barrierTimeoutMs = 500; // 500ms instead of 2000ms
-    config.capacity = 3;           // Small capacity to test "parking full"
+    config.capacity = 2;           // Small capacity to test "parking full"
 
     ESP_LOGI(TAG, "Test config: barrierTimeout=%lums, capacity=%lu",
              config.barrierTimeoutMs, config.capacity);

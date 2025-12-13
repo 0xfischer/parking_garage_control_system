@@ -154,15 +154,14 @@ void EntryGateController::onLightBarrierBlocked(const Event& event) {
 void EntryGateController::onLightBarrierCleared(const Event& event) {
     (void) event;
     if (m_state == EntryGateState::CarPassing) {
-        ESP_LOGI(TAG, "Car passed through, waiting 2 seconds before closing barrier");
+        ESP_LOGI(TAG, "Car passed through, waiting %lu ms before closing barrier", m_barrierTimeoutMs);
         m_eventBus.publish(Event(EventType::CarEnteredParking, 0, m_currentTicketId));
 
-        // Wait 2 seconds before closing barrier
+        // Wait before closing barrier (uses configured timeout)
         setState(EntryGateState::WaitingBeforeClose);
 
-        // Start timer with 2 seconds delay
         if (m_barrierTimer) {
-            xTimerChangePeriod(m_barrierTimer, pdMS_TO_TICKS(2000), 0);
+            xTimerChangePeriod(m_barrierTimer, pdMS_TO_TICKS(m_barrierTimeoutMs), 0);
             xTimerReset(m_barrierTimer, 0);
         }
     }

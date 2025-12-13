@@ -1,0 +1,7 @@
+# CI Configuration - Fast Tests
+# Use with: idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci" build
+
+# Parking system - CI mode with fast timeouts
+CONFIG_PARKING_CAPACITY=2
+CONFIG_PARKING_BARRIER_TIMEOUT_MS=500
+CONFIG_PARKING_BUTTON_DEBOUNCE_MS=50

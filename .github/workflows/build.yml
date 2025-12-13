@@ -3,8 +3,20 @@ name: Build
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'components/**'
+      - 'main/**'
+      - 'CMakeLists.txt'
+      - 'sdkconfig.defaults'
+      - 'sdkconfig.ci'
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - 'components/**'
+      - 'main/**'
+      - 'CMakeLists.txt'
+      - 'sdkconfig.defaults'
+      - 'sdkconfig.ci'
   workflow_dispatch:
     inputs:
       branch:

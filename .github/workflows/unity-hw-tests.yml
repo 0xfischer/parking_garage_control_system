@@ -3,8 +3,18 @@ name: Unity Hardware Tests
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'components/**'
+      - 'main/**'
+      - 'test/unity-hw-tests/**'
+      - 'test/wokwi-tests/**'
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - 'components/**'
+      - 'main/**'
+      - 'test/unity-hw-tests/**'
+      - 'test/wokwi-tests/**'
   workflow_dispatch:
     inputs:
       branch:

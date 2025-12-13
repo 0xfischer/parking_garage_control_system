@@ -1,0 +1,26 @@
+name: Unity Hardware Tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Unity tests with ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.5
+          target: esp32
+          path: test/unity-hw-tests
+
+      - name: Run Unity tests on Wokwi
+        uses: wokwi/wokwi-ci-action@v1
+        with:
+          token: ${{ secrets.WOKWI_CLI_TOKEN }}
+          timeout: 120000
+          path: test/unity-hw-tests
+          scenario: ../wokwi-tests/unity_hw_tests.yaml

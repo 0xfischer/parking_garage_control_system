@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,23 +17,37 @@ jobs:
           target: esp32
           command: idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci" build
 
-      - name: Run console_full Test
-        uses: wokwi/wokwi-ci-action@v1
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
-          token: ${{ secrets.WOKWI_CLI_TOKEN }}
-          timeout: 300000
-          scenario: test/wokwi-tests/console_full.yaml
+          name: wokwi-firmware
+          path: |
+            build/*.bin
+            build/*.elf
+            build/flasher_args.json
+            build/bootloader/*.bin
+            build/partition_table/*.bin
 
-      - name: Run entry_exit_flow Test
-        uses: wokwi/wokwi-ci-action@v1
-        with:
-          token: ${{ secrets.WOKWI_CLI_TOKEN }}
-          timeout: 300000
-          scenario: test/wokwi-tests/entry_exit_flow.yaml
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: [console_full, entry_exit_flow, parking_full]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Run parking_full Test
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wokwi-firmware
+          path: build
+
+      - name: Run ${{ matrix.scenario }} Test
         uses: wokwi/wokwi-ci-action@v1
         with:
           token: ${{ secrets.WOKWI_CLI_TOKEN }}
           timeout: 300000
-          scenario: test/wokwi-tests/parking_full.yaml
+          scenario: test/wokwi-tests/${{ matrix.scenario }}.yaml

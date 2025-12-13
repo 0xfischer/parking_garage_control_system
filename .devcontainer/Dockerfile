@@ -1,4 +1,4 @@
-FROM espressif/idf:release-v5.2
+FROM espressif/idf:release-v5.5
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG CONTAINER_USER=develop
@@ -9,16 +9,25 @@ ARG USER_GID=$USER_UID
 RUN apt-get update && apt-get install -y -q --no-install-recommends \
     git wget curl flex bison gperf sudo ca-certificates \
     python3 python3-pip python3-venv python3-setuptools python3-virtualenv \
+    pipx \
     dfu-util libusb-1.0-0 \
     build-essential cmake ninja-build ccache \
     libffi-dev libssl-dev libncurses-dev \
     clang-format clang-tidy gcovr lcov \
     doxygen graphviz \
+    nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# User anlegen
+# User anlegen (prüfen ob User existiert, sonst anlegen)
 RUN if ! getent group $USER_GID >/dev/null; then groupadd --gid $USER_GID $CONTAINER_USER; fi \
-    && if ! id -u $USER_UID >/dev/null 2>&1; then adduser --uid $USER_UID --gid $USER_GID --disabled-password --gecos "" ${CONTAINER_USER}; fi \
+    && if id -u $CONTAINER_USER >/dev/null 2>&1; then \
+         echo "User $CONTAINER_USER already exists"; \
+       elif id -u $USER_UID >/dev/null 2>&1; then \
+         EXISTING_USER=$(getent passwd $USER_UID | cut -d: -f1); \
+         usermod -l $CONTAINER_USER -d /home/$CONTAINER_USER -m $EXISTING_USER; \
+       else \
+         adduser --uid $USER_UID --gid $USER_GID --disabled-password --gecos "" ${CONTAINER_USER}; \
+       fi \
     && usermod -aG sudo,dialout $CONTAINER_USER \
     && echo "$CONTAINER_USER:$CONTAINER_USER" | chpasswd \
     && echo "$CONTAINER_USER ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$CONTAINER_USER \
@@ -28,7 +37,7 @@ RUN if ! getent group $USER_GID >/dev/null; then groupadd --gid $USER_GID $CONTA
 USER ${CONTAINER_USER}
 ENV USER=${CONTAINER_USER}
 ENV HOME=/home/${CONTAINER_USER}
-ENV PATH="$HOME/.local/bin:$PATH"
+ENV PATH="$HOME/.local/bin:${HOME}/.wokwi/bin:$PATH"
 
 WORKDIR /workspace
 
@@ -38,8 +47,8 @@ RUN wget -qO- https://wokwi.com/ci/install.sh | sh
 # act (install to /usr/local/bin so it's in PATH)
 RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- -b /usr/local/bin
 
-# pre-commit (als User installieren)
-RUN pip3 install --no-cache-dir --user pre-commit
+# pre-commit (mit pipx installieren, da Python 3.12+ PEP 668)
+RUN pipx install pre-commit
 
 # Git safe.directory and editor configuration
 RUN git config --global --add safe.directory /opt/esp/idf \

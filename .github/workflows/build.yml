@@ -15,23 +15,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: read
-    container:
-      image: ghcr.io/0xfischer/parking_garage_control_system-dev:latest
-      options: --user root
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build (inside devcontainer image)
-        run: |
-          . $IDF_PATH/export.sh
-          make build-local
+      - name: Build with ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.5
+          target: esp32
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

@@ -154,7 +154,7 @@ void EntryGateController::onLightBarrierBlocked(const Event& event) {
 void EntryGateController::onLightBarrierCleared(const Event& event) {
     (void) event;
     if (m_state == EntryGateState::CarPassing) {
-        ESP_LOGI(TAG, "Car passed through, waiting %lu ms before closing barrier", m_barrierTimeoutMs);
+        ESP_LOGI(TAG, "Car passed through, waiting %u ms before closing barrier", (unsigned) m_barrierTimeoutMs);
         m_eventBus.publish(Event(EventType::CarEnteredParking, 0, m_currentTicketId));
 
         // Wait before closing barrier (uses configured timeout)

@@ -1,5 +1,6 @@
 #include "EspServoOutput.h"
 #include "esp_log.h"
+#include "esp_idf_version.h"
 
 static const char* TAG = "EspServoOutput";
 
@@ -31,7 +32,9 @@ EspServoOutput::EspServoOutput(gpio_num_t pin, ledc_channel_t ledcChannel, bool 
         .timer_sel = LEDC_TIMER_0,
         .duty = 0,
         .hpoint = 0,
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 5, 0)
         .sleep_mode = LEDC_SLEEP_MODE_NO_ALIVE_NO_PD,
+#endif
         .flags = {
             .output_invert = 0}};
 

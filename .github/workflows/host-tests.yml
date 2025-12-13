@@ -1,0 +1,57 @@
+name: Host Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ gcovr
+
+      - name: Build and run tests
+        run: |
+          cmake -S test -B build-host -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build-host
+          ctest --test-dir build-host --output-on-failure
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ gcovr
+
+      - name: Build and run tests with coverage
+        run: |
+          cmake -S test -B build-host -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
+          cmake --build build-host
+          ctest --test-dir build-host --output-on-failure
+
+      - name: Generate coverage report
+        run: |
+          gcovr -r . --html --html-details -o build-host/coverage.html
+          gcovr -r . --xml -o build-host/coverage.xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            build-host/coverage.html
+            build-host/coverage.*.html
+            build-host/coverage.xml

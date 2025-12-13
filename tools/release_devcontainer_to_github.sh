@@ -78,9 +78,21 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-# Fix broken context by switching to default if needed
-if ! docker context inspect >/dev/null 2>&1; then
-  docker context use default >/dev/null 2>&1 || true
+# Ensure a valid Docker context is selected
+# Some environments misconfigure the current context to a non-existent one (error mentions context ".")
+# Prefer an explicit context if provided via DOCKER_CONTEXT_NAME, else force 'default' when current is broken.
+CURRENT_CTX="$(docker context show 2>/dev/null || echo default)"
+TARGET_CTX="${DOCKER_CONTEXT_NAME:-$CURRENT_CTX}"
+
+# If the target context cannot be inspected, fall back to 'default'
+if ! docker context inspect "$TARGET_CTX" >/dev/null 2>&1; then
+  TARGET_CTX=default
+fi
+
+# Switch context only if different
+if [ "$TARGET_CTX" != "$CURRENT_CTX" ]; then
+  echo "Switching Docker context to '$TARGET_CTX'"
+  docker context use "$TARGET_CTX" >/dev/null 2>&1 || echo "Warning: failed to switch Docker context; continuing with current context '$CURRENT_CTX'"
 fi
 
 # Ensure buildx exists and a builder is active
@@ -89,7 +101,9 @@ if ! docker buildx version >/dev/null 2>&1; then
   exit 1
 fi
 
+# Ensure a usable buildx builder exists; create a named one if none is active
 if ! docker buildx ls | grep -q "\*"; then
+  echo "Creating and using buildx builder 'repo-builder'"
   docker buildx create --use --name repo-builder >/dev/null 2>&1 || true
 fi
 

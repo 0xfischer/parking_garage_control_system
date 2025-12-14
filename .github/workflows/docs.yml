@@ -28,30 +28,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Build docs (inside devcontainer image)
+      - name: Build Doxygen API documentation
         run: doxygen Doxyfile
+
+      - name: Generate coverage report
+        run: make coverage-run
 
       - name: Prepare GitHub Pages site
         run: |
-          # Ensure docs site contains README and coverage links
-          mkdir -p docs
-          # Create index if not existing (the file is managed in repo; this guards CI runs)
-          [ -f docs/index.md ] || cat > docs/index.md <<'EOF'
-          ---
-          title: Parking Garage Control System
-          ---
+          # Copy Doxygen output to docs/api/
+          mkdir -p docs/api
+          cp -r html/* docs/api/
 
-          {% include_relative ../README.md %}
-          EOF
-          # Coverage page
-          mkdir -p coverage
-          [ -f docs/coverage.md ] || cat > docs/coverage.md <<'EOF'
-          ---
-          title: Coverage Report
-          ---
+          # Copy coverage HTML to docs/coverage/
+          mkdir -p docs/coverage
+          cp build-host/coverage.html docs/coverage/index.html
+          # Copy additional coverage files if they exist (detail pages)
+          cp build-host/coverage.*.html docs/coverage/ 2>/dev/null || true
 
-          {% include_relative ../coverage/COVERAGE_REPORT.md %}
-          EOF
+          # Copy README.md to docs/ for Jekyll to process
+          cp README.md docs/
+
+          # Copy demo.gif if it exists
+          [ -f demo.gif ] && cp demo.gif docs/ || true
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

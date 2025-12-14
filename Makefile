@@ -2,7 +2,8 @@
 export
 
 .PHONY: test-local build-local build-ci format-check lint-check coverage-run act-test fullclean lint-tidy-db lint-tidy lint-tidy-changed wokwi-test wokwi-test-ci \
-	env-print env-example act-wokwi docker-release init test-wokwi-coverage build-coverage build-unity-tests test-unity-wokwi
+	env-print env-example act-wokwi docker-release init test-wokwi-coverage build-coverage build-unity-tests test-unity-wokwi \
+	docs docs-site docs-deploy
 
 JOBS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 
@@ -205,3 +206,32 @@ act-wokwi:
 		exit 1; \
 	fi; \
 	./bin/act -W .github/workflows/wokwi-tests.yml -s WOKWI_CLI_TOKEN=$$WOKWI_CLI_TOKEN
+
+
+###############################################
+# Documentation (Doxygen + Coverage)          #
+###############################################
+
+# Build Doxygen documentation
+docs:
+	doxygen Doxyfile
+	@echo "Documentation generated: html/index.html"
+
+# Prepare complete gh-pages site locally (Doxygen + Coverage + README)
+docs-site: docs coverage-run
+	mkdir -p docs/api docs/coverage
+	cp -r html/* docs/api/
+	cp build-host/coverage.html docs/coverage/index.html
+	cp build-host/coverage.*.html docs/coverage/ 2>/dev/null || true
+	cp README.md docs/
+	[ -f demo.gif ] && cp demo.gif docs/ || true
+	@echo "Site prepared in docs/"
+	@echo "  - Main page: docs/index.md"
+	@echo "  - API docs:  docs/api/index.html"
+	@echo "  - Coverage:  docs/coverage/index.html"
+
+# Deploy to gh-pages branch (requires push permissions)
+docs-deploy: docs-site
+	@command -v ghp-import >/dev/null 2>&1 || pip install ghp-import --quiet
+	ghp-import -n -p -f docs
+	@echo "Deployed to gh-pages branch"

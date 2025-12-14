@@ -31,6 +31,12 @@ test/test_*
 *.log
 .claude/settings.local
 
+# Generated documentation (keep docs/_layouts, docs/_config.yml, docs/index.md)
+html/
+docs/api/
+docs/coverage/
+docs/README.md
+
 # binaries (act)
 bin/
 

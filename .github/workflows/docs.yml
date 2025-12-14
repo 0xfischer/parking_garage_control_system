@@ -31,8 +31,32 @@ jobs:
       - name: Build docs (inside devcontainer image)
         run: doxygen Doxyfile
 
+      - name: Prepare GitHub Pages site
+        run: |
+          # Ensure docs site contains README and coverage links
+          mkdir -p docs
+          # Create index if not existing (the file is managed in repo; this guards CI runs)
+          [ -f docs/index.md ] || cat > docs/index.md <<'EOF'
+          ---
+          title: Parking Garage Control System
+          ---
+
+          {% include_relative ../README.md %}
+          EOF
+          # Coverage page
+          mkdir -p coverage
+          [ -f docs/coverage.md ] || cat > docs/coverage.md <<'EOF'
+          ---
+          title: Coverage Report
+          ---
+
+          {% include_relative ../coverage/COVERAGE_REPORT.md %}
+          EOF
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./html
+          publish_branch: gh-pages
+          publish_dir: docs
+          force_orphan: true

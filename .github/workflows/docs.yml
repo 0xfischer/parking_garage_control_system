@@ -51,6 +51,7 @@ jobs:
 
           # Copy demo.gif if it exists
           [ -f demo.gif ] && cp demo.gif docs/ || true
+          echo "done"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

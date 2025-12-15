@@ -232,6 +232,6 @@ docs-site: docs coverage-run
 
 # Deploy to gh-pages branch (requires push permissions)
 docs-deploy: docs-site
-	@command -v ghp-import >/dev/null 2>&1 || pip install ghp-import --quiet
+	@command -v ghp-import >/dev/null 2>&1 || pipx install ghp-import --quiet
 	ghp-import -n -p -f docs
 	@echo "Deployed to gh-pages branch"

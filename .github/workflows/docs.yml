@@ -45,13 +45,15 @@ jobs:
           cp build-host/coverage.html docs/coverage/index.html
           # Copy additional coverage files if they exist (detail pages)
           cp build-host/coverage.*.html docs/coverage/ 2>/dev/null || true
+          # Copy coverage stylesheet if present
+          cp build-host/coverage.css docs/coverage/ 2>/dev/null || true
 
           # Copy README.md to docs/ for Jekyll to process
           cp README.md docs/
 
           # Copy demo.gif if it exists
           [ -f demo.gif ] && cp demo.gif docs/ || true
-          echo "done"
+          echo "done2"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

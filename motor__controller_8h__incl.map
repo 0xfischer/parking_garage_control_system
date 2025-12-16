@@ -1,0 +1,15 @@
+<map id="motor_controller.h" name="motor_controller.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="183,5,325,31"/>
+<area shape="rect" id="Node000002" href="$event__driven__state__machine_8h.html" title=" " alt="" coords="113,79,259,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="246,33,213,70,209,66,242,29"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="283,86,363,111"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="266,29,306,74,302,77,262,33"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,167,92,192"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="154,121,82,162,80,157,152,116"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="116,167,179,192"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="179,120,162,155,157,153,174,118"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="203,167,249,192"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="198,118,216,153,211,155,193,120"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="274,167,349,192"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="218,117,283,157,280,162,215,121"/>
+</map>

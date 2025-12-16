@@ -1,0 +1,11 @@
+<map id="hal_state_machine_test.cpp" name="hal_state_machine_test.cpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="174,5,378,31"/>
+<area shape="rect" id="Node000002" href="$hal__state__machine_8h.html" title=" " alt="" coords="5,79,163,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="246,33,129,76,127,71,244,28"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="187,79,267,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="270,33,245,69,240,66,266,29"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="291,79,360,104"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="286,29,312,66,307,69,282,33"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="385,79,447,104"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="300,28,382,70,380,75,297,33"/>
+</map>

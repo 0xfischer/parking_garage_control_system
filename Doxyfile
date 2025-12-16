@@ -26,7 +26,7 @@ QUIET                  = YES
 WARN_IF_UNDOCUMENTED   = NO
 
 # Inputs
-INPUT                  = README.md components main examples docs/mermaid.md
+INPUT                  = README.md components main examples docs/mermaid.md docs/coverage_embed.md docs/coverage_tabs.md
 FILE_PATTERNS          = *.h *.hpp *.c *.cpp *.md
 # No extension mapping needed; Markdown is detected automatically
 USE_MDFILE_AS_MAINPAGE = README.md

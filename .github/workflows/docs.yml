@@ -12,6 +12,10 @@ on:
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -36,6 +40,8 @@ jobs:
 
       - name: Prepare GitHub Pages site
         run: |
+          # Cleanup target dir to avoid stale files
+          #rm -rf docs/* || true
           # Copy Doxygen output to docs/ (serve at site root)
           mkdir -p docs
           cp -r html/* docs/
@@ -56,6 +62,7 @@ jobs:
 
           # Serve static files as-is on GitHub Pages
           touch docs/.nojekyll
+          echo "Prepared docs/ for GitHub Pages"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

@@ -36,9 +36,9 @@ jobs:
 
       - name: Prepare GitHub Pages site
         run: |
-          # Copy Doxygen output to docs/api/
-          mkdir -p docs/api
-          cp -r html/* docs/api/
+          # Copy Doxygen output to docs/ (serve at site root)
+          mkdir -p docs
+          cp -r html/* docs/
 
           # Copy coverage HTML to docs/coverage/
           mkdir -p docs/coverage
@@ -48,12 +48,14 @@ jobs:
           # Copy coverage stylesheet if present
           cp build-host/coverage.css docs/coverage/ 2>/dev/null || true
 
-          # Copy README.md to docs/ for Jekyll to process
+          # Copy README.md (Doxygen main page renders it; keep for reference)
           cp README.md docs/
 
           # Copy demo.gif if it exists
           [ -f demo.gif ] && cp demo.gif docs/ || true
-          echo "done2"
+
+          # Serve static files as-is on GitHub Pages
+          touch docs/.nojekyll
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
@@ -62,4 +64,4 @@ jobs:
           publish_branch: gh-pages
           publish_dir: docs
           force_orphan: true
-          enable_jekyll: true
+          enable_jekyll: false

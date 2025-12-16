@@ -11,14 +11,36 @@
     });
   }
 
+  function transformDoxygenFragments() {
+    // Doxygen often wraps code blocks as div.fragment with div.line children
+    var fragments = document.querySelectorAll('div.fragment');
+    fragments.forEach(function (frag) {
+      var txt = (frag.textContent || '').trim();
+      // Heuristic detection of Mermaid content
+      var looksLikeMermaid = /^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie)\b/i.test(txt)
+        || /^stateDiagram-v2\b/i.test(txt);
+      if (looksLikeMermaid) {
+        var div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = txt;
+        frag.parentNode.replaceChild(div, frag);
+      }
+    });
+  }
+
   function initMermaid() {
     if (!window.mermaid) return;
     try {
-      window.mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+      // Transform before initializing Mermaid
       transformCodeFences();
-      window.mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+      transformDoxygenFragments();
+
+      window.mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+      window.mermaid.run();
     } catch (e) {
-      console && console.warn && console.warn('Mermaid init failed:', e);
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('Mermaid init failed:', e);
+      }
     }
   }
 

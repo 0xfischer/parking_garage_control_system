@@ -326,8 +326,7 @@ For detailed test documentation, see [test/README.md](test/README.md).
 
 ## Documentation
 
-- **Main Site**: https://0xfischer.github.io/parking_garage_control_system/
-- **API Reference** (Doxygen): https://0xfischer.github.io/parking_garage_control_system/api/
+- **Main Site / API (Doxygen)**: https://0xfischer.github.io/parking_garage_control_system/
 - **Coverage Report**: https://0xfischer.github.io/parking_garage_control_system/coverage/
 
 ## Devcontainer

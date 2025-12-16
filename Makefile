@@ -3,7 +3,7 @@ export
 
 .PHONY: test-local build-local build-ci format-check lint-check coverage-run act-test fullclean lint-tidy-db lint-tidy lint-tidy-changed wokwi-test wokwi-test-ci \
 	env-print env-example act-wokwi docker-release init test-wokwi-coverage build-coverage build-unity-tests test-unity-wokwi \
-	docs docs-site docs-deploy
+	docs docs-site docs-deploy docs-serve docs-clean docs-reset
 
 JOBS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 
@@ -219,19 +219,66 @@ docs:
 
 # Prepare complete gh-pages site locally (Doxygen + Coverage + README)
 docs-site: docs coverage-run
-	mkdir -p docs/api docs/coverage
-	cp -r html/* docs/api/
-	cp build-host/coverage.html docs/coverage/index.html
+	mkdir -p docs/coverage
+	# Publish Doxygen HTML at site root
+	cp -r html/* docs/
+	# Coverage report (HTML + CSS)
+	cp build-host/coverage.html docs/coverage/index.html || true
 	cp build-host/coverage.*.html docs/coverage/ 2>/dev/null || true
-	cp README.md docs/
+	cp build-host/coverage.css docs/coverage/ 2>/dev/null || true
+	# README for reference (Doxygen main page already renders README)
+	cp README.md docs/ || true
+	# Optional media
 	[ -f demo.gif ] && cp demo.gif docs/ || true
+	# Ensure GitHub Pages serves static files as-is
+	touch docs/.nojekyll
 	@echo "Site prepared in docs/"
-	@echo "  - Main page: docs/index.md"
-	@echo "  - API docs:  docs/api/index.html"
-	@echo "  - Coverage:  docs/coverage/index.html"
+	@echo "  - Doxygen root: docs/index.html"
+	@echo "  - Coverage:     docs/coverage/index.html"
+
+# Serve the docs/ folder locally with Jekyll (requires bundle install in docs/)
+# cd docs
+# bundle config set --local path 'vendor/bundle'
+# bundle install
+docs-serve-install:
+	@cd docs && \
+		bundle config set --local path 'vendor/bundle' && \
+		bundle install
+
+docs-serve: docs-serve-install
+	@# Ensure README.md is present in docs/ for include_relative in index.md
+	@[ -f docs/README.md ] || cp README.md docs/
+	@cd docs && bundle exec jekyll serve --safe -H 0.0.0.0
+
+# Clean generated documentation and site artifacts
+docs-clean:
+	@echo "=== Cleaning generated documentation and site artifacts ==="
+	rm -rf html
+	rm -rf docs/_site docs/.jekyll-cache docs/.sass-cache docs/.nojekyll docs/coverage
+	@cd docs && find . -mindepth 1 \
+	 ! -path './_config.yml' \
+	 ! -path './_layouts' ! -path './_layouts/*' \
+	 ! -path './index.md' \
+	 ! -path './footer.html' \
+	 ! -path './mermaid-init.js' \
+	 ! -path './mermaid.md' \
+	 ! -path './Gemfile' \
+	 ! -path './Gemfile.lock' \
+	 ! -path './vendor' ! -path './vendor/*' \
+	 ! -path './demo.gif' \
+	 -exec rm -rf {} +
+	@echo "✓ Docs cleaned."
+
+# Hard reset: also remove Bundler vendor cache (forces bundle install next time)
+docs-reset: docs-clean
+	rm -rf docs/vendor
+	@echo "✓ Docs vendor removed (fresh bundle install required)."
 
 # Deploy to gh-pages branch (requires push permissions)
 docs-deploy: docs-site
 	@command -v ghp-import >/dev/null 2>&1 || pipx install ghp-import --quiet
 	ghp-import -n -p -f docs
 	@echo "Deployed to gh-pages branch"
+
+docs-serve-full: docs-clean docs-site docs-serve
+	@echo "Full documentation build and deployment complete."

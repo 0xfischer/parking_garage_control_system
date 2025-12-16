@@ -26,11 +26,11 @@ QUIET                  = YES
 WARN_IF_UNDOCUMENTED   = NO
 
 # Inputs
-INPUT                  = README.md components main examples
+INPUT                  = README.md components main examples docs/mermaid.md
 FILE_PATTERNS          = *.h *.hpp *.c *.cpp *.md
-EXTENSION_MAPPING      = md=markdown
+# No extension mapping needed; Markdown is detected automatically
 USE_MDFILE_AS_MAINPAGE = README.md
-EXCLUDE_PATTERNS       = */test/* */examples/*/README.md
+EXCLUDE_PATTERNS       = */test/* */examples/*/README.md examples/README.md test/README.md
 
 # HTML output
 HTML_OUTPUT            = html
@@ -38,14 +38,14 @@ GENERATE_TREEVIEW      = YES
 DISABLE_INDEX          = NO
 FULL_PATH_NAMES        = NO
 
-# Copy extra files and inject Mermaid support via custom footer
+# Copy extra files and inject Mermaid support via custom footer (keep default header)
 HTML_EXTRA_FILES       = docs/mermaid-init.js
+# HTML_HEADER is intentionally not overridden to keep Doxygen's default CSS/JS
 HTML_FOOTER            = docs/footer.html
 
 # Dot/Graphviz (optional, already installed in CI)
 HAVE_DOT               = YES
 DOT_NUM_THREADS        = 2
-DOT_TRANSPARENT        = YES
 DOT_MULTI_TARGETS      = YES
 CALL_GRAPH             = NO
 CALLER_GRAPH           = NO

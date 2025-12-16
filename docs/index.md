@@ -9,5 +9,5 @@ title: Parking Garage Control System
 
 ## Weitere Ressourcen
 
-- API-Dokumentation: [Doxygen HTML](api/index.html)
+- API-Dokumentation: [Startseite](index.html)
 - Code Coverage: [Coverage Report](coverage/)

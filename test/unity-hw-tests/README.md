@@ -60,6 +60,31 @@ idf.py build
 idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
+## Coverage Generation
+
+Automated coverage generation using QEMU (Default) or Wokwi.
+
+### Default (QEMU)
+Runs the tests in QEMU and checks coverage locally. No external account required.
+
+```bash
+python3 ../../tools/run_coverage.py
+```
+
+### Wokwi (Optional)
+Runs the tests in Wokwi simulator (requires Wokwi CLI token).
+
+```bash
+python3 ../../tools/run_coverage.py --wokwi
+```
+
+The script will:
+1. Build the project with coverage flags.
+2. Run simulation (QEMU for ~30s, or Wokwi).
+3. Extract coverage data from console output.
+4. Generate an HTML report in `coverage_report/index.html`.
+
+
 ## Test-Ablauf
 
 Die Tests starten automatisch nach dem Boot:

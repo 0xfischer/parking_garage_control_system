@@ -57,12 +57,37 @@ test-wokwi-full: build-ci
 		echo "All Wokwi tests passed successfully."; \
 	fi
 
+test-unity-hw-tests-wokwi:
+	@bash -c "cd test/unity-hw-tests && idf.py build"
+	@bash -c "cd test/unity-hw-tests && wokwi-cli --scenario ../wokwi-tests/unity_hw_tests.yaml"
 build-unity-tests:
 	@bash -c "cd test/unity-hw-tests && idf.py build"
 	@echo "Unity test firmware built in test/unity-hw-tests/build/"
 
 test-unity-wokwi: build-unity-tests
 	cd test/unity-hw-tests && wokwi-cli --timeout 60000 --scenario ../wokwi-tests/unity_hw_tests.yaml
+
+test-unity-qemu:
+	@bash -c "cd test/unity-hw-tests && idf.py build"
+	@bash -c "cd test/unity-hw-tests && idf.py qemu monitor"
+
+test-unity-qemu-cov:
+	@bash -c "cd test/unity-hw-tests && rm -rf build sdkconfig"
+	@bash -c "cd test/unity-hw-tests && idf.py -D SDKCONFIG_DEFAULTS='sdkconfig.defaults;sdkconfig.coverage' build"
+	@echo "Generating QEMU flash image..."
+	@cd test/unity-hw-tests/build && esptool.py --chip=esp32 merge_bin --output=qemu_flash.bin --fill-flash-size=4MB --flash_mode dio --flash_freq 40m --flash_size 4MB 0x1000 bootloader/bootloader.bin 0x10000 unity_hw_tests.bin 0x8000 partition_table/partition-table.bin
+	@echo "Running QEMU with coverage..."
+	@cd test/unity-hw-tests && qemu-system-xtensa -nographic -M esp32 -m 4M \
+		-drive file=build/qemu_flash.bin,if=mtd,format=raw \
+		-global driver=timer.esp32.timg,property=wdt_disable,value=true \
+		-serial mon:stdio \
+		-semihosting \
+		-semihosting-config enable=on,target=native \
+		| tee test_output.log
+	@echo "Coverage run complete. Generating report..."
+	@mkdir -p test/unity-hw-tests/build/coverage_report
+	@cd test/unity-hw-tests && gcovr --root . --html --html-details -o build/coverage_report/index.html
+	@echo "Coverage report generated at test/unity-hw-tests/build/coverage_report/index.html"
 
 
 # ESP32 Coverage Note:

@@ -1,0 +1,22 @@
+# QEMU-specific configuration for Unity tests
+# Use with: idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.qemu" build
+
+# Flash configuration for QEMU (must match merge_bin size)
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_PARTITION_TABLE_SINGLE_APP=y
+
+# Disable hardware-specific features not supported/needed in QEMU
+CONFIG_ESP_INT_WDT=n
+CONFIG_ESP_TASK_WDT=n
+CONFIG_ESP_BROWNOUT_DET=n
+
+# Console output via UART (for QEMU serial capture)
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+CONFIG_ESP_CONSOLE_UART_NUM=0
+CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
+
+# Faster boot for QEMU
+CONFIG_BOOTLOADER_LOG_LEVEL_WARN=y
+
+# Reduce boot delay
+CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP=y

@@ -10,6 +10,10 @@
 #include "nvs_flash.h"
 #include "esp_log.h"
 
+#ifdef ENABLE_GCOV_COVERAGE
+#include "esp_gcov.h"
+#endif
+
 #include "../test_common.h"
 
 static const char* TAG = "test_main";
@@ -48,7 +52,21 @@ extern "C" void app_main(void) {
     register_exit_gate_tests();
     UNITY_END();
 
+#ifdef ENABLE_GCOV_COVERAGE
+    printf("\n=== Dumping GCOV Coverage Data ===\n");
+    printf("NOTE: This requires OpenOCD connection. In QEMU without OpenOCD,\n");
+    printf("      coverage data cannot be collected. Use host tests instead:\n");
+    printf("      make coverage-run\n");
+    fflush(stdout);
+    // esp_gcov_dump() will block waiting for OpenOCD - skip in QEMU
+    // esp_gcov_dump();
+    printf("=== Coverage Dump Skipped (no OpenOCD in QEMU) ===\n");
+#endif
+
     printf("\n=== Tests Complete ===\n");
+    // QEMU test completion marker - used by run_qemu_tests.sh to detect end
+    printf("\n[QEMU_TEST_DONE]\n");
+    fflush(stdout);
 
     // Keep running so output can be read
     while (1) {

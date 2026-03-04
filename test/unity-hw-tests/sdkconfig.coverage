@@ -1,0 +1,23 @@
+# Coverage-specific configuration for QEMU tests
+# Use with: idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.qemu;sdkconfig.coverage" build
+#
+# WARNING: ESP32 GCOV coverage in QEMU is experimental.
+# Standard esp_gcov requires OpenOCD/JTAG which is not available in QEMU.
+# For reliable coverage, use host tests: make coverage-run
+
+# Enable Application Tracing for GCOV
+CONFIG_APPTRACE_ENABLE=y
+CONFIG_APPTRACE_DEST_JTAG=y
+CONFIG_APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE=y
+CONFIG_APPTRACE_GCOV_ENABLE=y
+
+# OpenOCD debug stubs (required by esp_gcov)
+CONFIG_ESP_DEBUG_OCDAWARE=y
+
+# Increase stack sizes for coverage instrumentation overhead
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=32768
+CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH=8192
+
+# Keep watchdogs disabled (inherited from sdkconfig.qemu)
+CONFIG_ESP_INT_WDT=n
+CONFIG_ESP_TASK_WDT=n

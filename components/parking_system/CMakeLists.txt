@@ -33,3 +33,17 @@ idf_component_register(
         freertos    # For FreeRTOS
         esp_timer   # For esp_timer
 )
+
+# Coverage instrumentation (only for QEMU coverage builds)
+# Enabled via: idf.py -D ENABLE_QEMU_COVERAGE=ON build
+if(ENABLE_QEMU_COVERAGE)
+    message(STATUS "Adding coverage flags to parking_system component")
+    target_compile_options(${COMPONENT_LIB} PRIVATE
+        --coverage
+        -fprofile-arcs
+        -ftest-coverage
+        -O0
+        -g
+    )
+    target_link_options(${COMPONENT_LIB} PRIVATE --coverage)
+endif()

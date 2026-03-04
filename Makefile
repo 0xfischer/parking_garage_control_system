@@ -3,6 +3,7 @@ export
 
 .PHONY: test-local build-local build-ci format-check lint-check coverage-run act-test fullclean lint-tidy-db lint-tidy lint-tidy-changed wokwi-test wokwi-test-ci \
 	env-print env-example act-wokwi docker-release init test-wokwi-coverage build-coverage build-unity-tests test-unity-wokwi \
+	build-unity-tests-qemu test-unity-qemu build-unity-tests-qemu-coverage test-unity-qemu-coverage test-unity-qemu-interactive \
 	docs docs-site docs-deploy docs-serve docs-clean docs-reset
 
 JOBS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
@@ -63,6 +64,51 @@ build-unity-tests:
 
 test-unity-wokwi: build-unity-tests
 	cd test/unity-hw-tests && wokwi-cli --timeout 60000 --scenario ../wokwi-tests/unity_hw_tests.yaml
+
+# =============================================================================
+# QEMU-based Unity Tests
+# =============================================================================
+
+# Build Unity tests for QEMU (uses qemu-specific sdkconfig)
+build-unity-tests-qemu:
+	@echo "=== Building Unity tests for QEMU ==="
+	@bash -c "cd test/unity-hw-tests && \
+		rm -f sdkconfig && \
+		idf.py -D SDKCONFIG_DEFAULTS='sdkconfig.defaults;sdkconfig.qemu' build"
+	@echo "Unity test firmware built for QEMU in test/unity-hw-tests/build/"
+
+# Run Unity tests in QEMU (no coverage)
+test-unity-qemu: build-unity-tests-qemu
+	@echo "=== Running Unity tests in QEMU ==="
+	@./tools/run_qemu_tests.sh 120
+
+# Build Unity tests with coverage instrumentation for QEMU
+build-unity-tests-qemu-coverage:
+	@echo "=== Building Unity tests for QEMU with Coverage (Experimental) ==="
+	@echo "WARNING: ESP32 GCOV coverage in QEMU is experimental."
+	@echo "         For reliable coverage, use 'make coverage-run' (host tests)."
+	@bash -c "cd test/unity-hw-tests && \
+		rm -f sdkconfig && \
+		idf.py -D SDKCONFIG_DEFAULTS='sdkconfig.defaults;sdkconfig.qemu;sdkconfig.coverage' \
+		       -D ENABLE_QEMU_COVERAGE=ON \
+		       reconfigure build"
+	@echo "Unity test firmware with coverage built in test/unity-hw-tests/build/"
+
+# Run Unity tests in QEMU with coverage (Experimental)
+# Note: Actual coverage data collection requires OpenOCD which is not available in QEMU
+test-unity-qemu-coverage: build-unity-tests-qemu-coverage
+	@echo "=== Running Unity tests in QEMU with Coverage (Experimental) ==="
+	@./tools/run_qemu_tests.sh 180
+	@echo ""
+	@echo "NOTE: QEMU coverage data collection is limited."
+	@echo "      The gcov runtime requires OpenOCD which is not available in QEMU."
+	@echo "      For full coverage reports, use: make coverage-run"
+
+# Interactive QEMU mode (manual exit with Ctrl-A X)
+test-unity-qemu-interactive: build-unity-tests-qemu
+	@echo "=== Running Unity tests in QEMU (interactive) ==="
+	@echo "Press Ctrl-A X to exit QEMU"
+	@bash -c "cd test/unity-hw-tests && idf.py qemu monitor"
 
 
 # ESP32 Coverage Note:
